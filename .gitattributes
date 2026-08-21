@@ -1,0 +1,4 @@
+# Normalize to LF in the repo and in the working tree. Everything here is read
+# by python or by GitHub Actions on Linux, so CRLF buys nothing and only makes
+# diffs noisy when the repo is edited from Windows.
+* text=auto eol=lf
