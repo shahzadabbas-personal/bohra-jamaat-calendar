@@ -1,0 +1,29 @@
+# Weekly announcement sweep. The verify steps run; the sweep itself is still
+# a stub, pending a calendar_id and an ANTHROPIC_API_KEY secret.
+name: miqaat-sweep
+on:
+  schedule:
+    - cron: '0 12 * * 0'   # Sundays 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Verify calendar arithmetic
+        run: python3 core/misri.py
+      - name: Verify sweep logic
+        run: python3 core/test_sweep.py
+      - name: Sweep announcements
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          echo "TODO: python3 core/sweep.py jamaats/nj-burhani --apply"
+          # Needs ANTHROPIC_API_KEY in secrets and calendar_id in the jamaat
+          # config. Run it locally in dry run first -- the extraction has never
+          # been tried on real mail.
