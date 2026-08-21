@@ -1,0 +1,151 @@
+# Anjuman-e-Burhani, New Jersey
+#
+# `observed_offset` is in days, applied to the canonical Gregorian date from
+# catalog.yaml. -1 means the program is held the previous evening (which, after
+# maghrib, is already the canonical Hijri day).
+#
+# Any entry with `confirmed: false` is a GUESS from prior years. The sweep
+# promotes it to confirmed once an announcement email supplies real timing.
+
+jamaat:
+  id: nj-burhani
+  name: Anjuman-e-Burhani
+  masjid: Masjid uz Zainee
+  region: East Brunswick, New Jersey, USA
+  timezone: America/New_York
+  # Google Calendar settings -> Integrate calendar -> Calendar ID.
+  # sweep.py writes announced times here.
+  calendar_id: ""
+
+sources:
+  announcement_senders:
+    - info@anjuman-e-burhani.org
+  # The monthly roundup ("<Month> <Year>H Miqaat Monthly Schedule") populates a
+  # whole Hijri month at once; per-miqaat mails then refine it.
+  monthly_schedule_subject: "Miqaat Monthly Schedule"
+  ignore_subjects:
+    - Teejia
+    - Sadaqallah
+    - sipara
+    - FMB thaali
+    - NIAZ RSVP
+
+defaults:
+  observed_offset: -1
+  start_time: "19:00"
+  duration_minutes: 150
+  location: Masjid uz Zainee
+
+# Miqaats Anjuman-e-Burhani actually programs at the masjid.
+# Derived from announcement emails spanning 1447H-1448H.
+observes:
+
+  - id: darees-majlis
+    observed_offset: -1
+    start_time: "18:30"
+    note: Confirmed in Rabi ul Akhar, Jamadil Ula/Ukhra, Zilqad, Zilhaj, Safar.
+
+  - id: ashara-mubaraka
+    observed_offset: 0
+    duration_minutes: 0        # all-day; relay center in 1448H
+    confirmed: false
+
+  - id: urus-hatim-mohiyuddin
+    observed_offset: 0
+    start_time: "19:00"
+
+  - id: urus-fakhruddin-shaheed
+    observed_offset: 0
+
+  - id: chehlum
+    observed_offset: -1
+    confirmed: false
+    note: 1447H held 20mi, 1448H held 19mi. Verify every year.
+
+  - id: shahadat-imam-hasan
+    observed_offset: -1
+    confirmed: false
+    note: 1447H held 28mi, 1448H held 27mi. Verify every year.
+
+  - id: milad-un-nabi
+    observed_offset: -1
+    start_time: "18:45"
+    note: Held on 11mi in both 1447H and 1448H. Niyaz jaman then waaz.
+
+  - id: urus-mohammed-burhanuddin
+    observed_offset: 0
+    confirmed: false
+    note: Multi-day ayyam program; the sweep must fan out across days.
+
+  - id: shahadat-fatema
+    observed_offset: -1
+    start_time: "18:30"
+
+  - id: urus-ismail-badruddin
+    observed_offset: -1
+
+  - id: urus-qutubuddin-shaheed
+    observed_offset: -1
+    start_time: "18:15"
+
+  - id: urus-noormohammed-nooruddin
+    observed_offset: -1
+    start_time: "19:00"
+
+  - id: urus-hurratul-maleka
+    observed_offset: -1
+    start_time: "18:30"
+
+  - id: matam-majlis-ramadan
+    observed_offset: -1
+
+  - id: misaaq-majlis
+    observed_offset: 0
+    start_time: "16:45"
+
+  - id: shahadat-ameerul-mumineen
+    observed_offset: 0
+    confirmed: false
+
+  - id: lailatul-qadr
+    observed_offset: 0
+    confirmed: false
+
+  - id: eid-ul-fitr
+    observed_offset: 0
+    confirmed: false
+
+  - id: urus-abdul-qadir-hakimuddin
+    observed_offset: -1
+
+  - id: urus-abduttaiyeb-abdeali
+    observed_offset: 0
+
+  - id: milad-taher-saifuddin
+    observed_offset: 0
+    note: Waaz at Masjid uz Zainee.
+
+  - id: yaumul-arafa
+    observed_offset: 0
+    confirmed: false
+
+  - id: eid-ul-adha
+    observed_offset: 0
+    confirmed: false
+    note: Zabihat organized separately (Godek Farms in 1447H).
+
+  - id: ghadir-e-khum
+    observed_offset: 0
+    confirmed: false
+    note: Roza is farizat. Waaz and misaq. Jadeed misaaq by arrangement.
+
+# Seasonal blocks that are not single-date miqaats.
+seasonal:
+  - id: ashara-ohbat
+    name: Ashara Mubaraka Ohbat ni Majlis
+    description: >-
+      Weekly Friday ohbat majlis for the 13 Jumoa preceding Ashara, per farman.
+    weekday: friday
+    ends_at_miqaat: ashara-mubaraka
+    occurrences: 13
+    confirmed: false

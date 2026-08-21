@@ -1,0 +1,61 @@
+# Template jamaat config. Copy this directory, rename it, and edit.
+# You should not need to touch anything under core/.
+#
+# Start small: list only the miqaats your jamaat actually programs at the
+# masjid. It is better to ship 20 accurate events than 200 guesses. Run the
+# sweep for a few months and add entries as announcements reveal them.
+
+jamaat:
+  id: your-jamaat-id            # slug; must match the directory name
+  name: Anjuman-e-Example
+  masjid: Masjid ul Example
+  region: City, State, Country
+  timezone: America/Chicago     # IANA tz name
+  # Google Calendar settings -> Integrate calendar -> Calendar ID.
+  # Required by sweep.py; leave blank until you have created the calendar.
+  calendar_id: ""
+
+sources:
+  # Sweep reads announcements from these senders only.
+  announcement_senders:
+    - info@example-jamaat.org
+  # If your jamaat sends a monthly roundup, put a distinctive subject fragment
+  # here; the sweep will use it to populate a whole Hijri month at once.
+  # Leave blank if yours only sends per-miqaat mails.
+  monthly_schedule_subject: ""
+  # Subject fragments to skip. Funeral notices and meal announcements are the
+  # usual noise; they are frequent and are not miqaats.
+  ignore_subjects:
+    - Teejia
+    - Sadaqallah
+
+defaults:
+  # Days to shift from the canonical Hijri date. -1 = evening before, which is
+  # correct for most evening majlis (after maghrib it is already that day).
+  # 0 = daytime program on the canonical day.
+  observed_offset: -1
+  start_time: "19:00"
+  duration_minutes: 150
+  location: Masjid ul Example
+
+# Pick ids from core/catalog.yaml. Per-entry keys override `defaults`.
+observes:
+
+  - id: ashara-mubaraka
+    observed_offset: 0
+    duration_minutes: 0         # 0 renders as an all-day event
+
+  - id: milad-un-nabi
+    observed_offset: -1
+
+  - id: eid-ul-fitr
+    observed_offset: 0
+
+  - id: eid-ul-adha
+    observed_offset: 0
+
+  # - id: darees-majlis         # every Hijri month, if your jamaat holds it
+  #   observed_offset: -1
+
+# Optional. Recurring blocks that are not single-date miqaats.
+seasonal: []

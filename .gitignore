@@ -1,0 +1,14 @@
+# Never commit anything derived from the jamaat mailing list.
+*.ics
+
+# The printed taqweem is the jamaat's own published document, and it is large.
+# Keep it local.
+*.pdf
+emails/
+raw/
+*.eml
+.env
+credentials.json
+token.json
+__pycache__/
+*.pyc

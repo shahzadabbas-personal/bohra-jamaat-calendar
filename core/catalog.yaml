@@ -1,0 +1,207 @@
+# Universal miqaat catalog.
+#
+# This is the SUPERSET. No jamaat observes all of these with a masjid function.
+# Each jamaat's config.yaml selects the subset it programs and supplies local
+# timing. Adding an entry here does not put it on anyone's calendar.
+#
+# `day` is the CANONICAL Hijri date of the miqaat. It is not necessarily the
+# day the program is held -- that is `observed_offset` in the jamaat config.
+#
+# `recurrence: monthly` means the entry fires in every Hijri month; `month` is
+# then ignored.
+
+miqaats:
+
+  # --- Moharram ul Haraam (1) ---
+  - id: ashara-mubaraka
+    name: Ashara Mubaraka
+    month: 1
+    day: 1
+    duration_days: 10
+    category: ashara
+
+  - id: ashura
+    name: Ashura - Yaum e Ashura
+    month: 1
+    day: 10
+    category: ashara
+
+  - id: urus-hatim-mohiyuddin
+    name: Urus - Syedna Hatim Mohiyuddin (RA), 3rd Dai al-Mutlaq
+    month: 1
+    day: 16
+    category: urus
+
+  - id: urus-fakhruddin-shaheed
+    name: Urus - Syedi Fakhruddin Shaheed (AQ)
+    month: 1
+    day: 26
+    category: urus
+
+  # --- Safar ul Muzaffar (2) ---
+  - id: chehlum
+    name: Chehlum - Imam Husain (AS)
+    month: 2
+    day: 20
+    category: majlis
+    note: >-
+      Observance day varies by jamaat and by year. Anjuman-e-Burhani NJ held
+      this on 20mi in 1447H and 19mi in 1448H. Always confirm.
+
+  - id: shahadat-imam-hasan
+    name: Shahadat - Imam Hasan (AS)
+    month: 2
+    day: 28
+    category: majlis
+    note: >-
+      Observance day varies. ABNJ held 28mi in 1447H, 27mi in 1448H.
+
+  # --- Rabi ul Awwal (3) ---
+  - id: milad-un-nabi
+    name: Milad un Nabi (SAW)
+    month: 3
+    day: 12
+    category: milad
+    note: Commonly programmed on 11mi as an evening waaz.
+
+  - id: urus-mohammed-burhanuddin
+    name: Urus Mubarak - Syedna Mohammed Burhanuddin (RA), 52nd Dai al-Mutlaq
+    month: 3
+    day: 13
+    duration_days: 3
+    category: urus
+
+  # --- Jamadil Ula (5) ---
+  - id: shahadat-fatema
+    name: Shahadat raat - Maulatena Fatema tuz Zehra (SA)
+    month: 5
+    day: 9
+    category: majlis
+
+  # --- Jamadil Ukhra (6) ---
+  - id: urus-ismail-badruddin
+    name: Urus - Syedna Ismail Badruddin (RA), Jamnagar
+    month: 6
+    day: 22
+    category: urus
+
+  - id: urus-qutubuddin-shaheed
+    name: Lailate Urus - Syedna Qutubuddin Shaheed (AQ)
+    month: 6
+    day: 26
+    category: urus
+
+  # --- Rajab ul Asab (7) ---
+  - id: urus-noormohammed-nooruddin
+    name: Urus - Syedna NoorMohammed Nooruddin (AQ), Mandvi
+    month: 7
+    day: 3
+    category: urus
+
+  - id: lailatul-meraj
+    name: Lailatul Meraj
+    month: 7
+    day: 27
+    category: majlis
+
+  # --- Shabaan ul Kareem (8) ---
+  - id: urus-hurratul-maleka
+    name: Urus - Maulatena Hurratul Maleka (RA)
+    month: 8
+    day: 21
+    category: urus
+
+  - id: shab-e-barat
+    name: Shab-e-Barat
+    month: 8
+    day: 15
+    category: majlis
+
+  # --- Shehrullah il Moazzam (9) ---
+  - id: ramadan-start
+    name: Shehrullah il Moazzam begins
+    month: 9
+    day: 1
+    category: seasonal
+
+  - id: matam-majlis-ramadan
+    name: Matam ni Majlis - 11mi raat Shehrullah
+    month: 9
+    day: 11
+    category: majlis
+
+  - id: misaaq-majlis
+    name: Misaaq ni Majlis
+    month: 9
+    day: 13
+    category: majlis
+
+  - id: shahadat-ameerul-mumineen
+    name: Shahadat - Ameerul Mumineen (AS)
+    month: 9
+    day: 21
+    category: majlis
+
+  - id: lailatul-qadr
+    name: Lailatul Qadr
+    month: 9
+    day: 23
+    category: majlis
+
+  # --- Shawwal ul Mukarram (10) ---
+  - id: eid-ul-fitr
+    name: Eid ul Fitr
+    month: 10
+    day: 1
+    category: eid
+
+  - id: urus-abdul-qadir-hakimuddin
+    name: Urus - Syedi Abdul Qadir Hakimuddin (AQ)
+    month: 10
+    day: 26
+    category: urus
+
+  # --- Zilqadatil Haraam (11) ---
+  - id: urus-abduttaiyeb-abdeali
+    name: >-
+      Urus - Syedna Abduttaiyeb Zakiyuddin (RA), Jamnagar
+      and Syedna Abdeali Saifuddin (RA), Surat
+    month: 11
+    day: 11
+    category: urus
+
+  - id: milad-taher-saifuddin
+    name: Milad Mubarak - Syedna Taher Saifuddin (AQ), 51st Dai al-Mutlaq
+    month: 11
+    day: 27
+    category: milad
+
+  # --- Zilhijjatil Haraam (12) ---
+  - id: yaumul-arafa
+    name: Yaumul Arafa
+    month: 12
+    day: 9
+    category: eid
+
+  - id: eid-ul-adha
+    name: Eid ul Adha
+    month: 12
+    day: 10
+    category: eid
+
+  - id: ghadir-e-khum
+    name: Eid-e-Ghadir-e-Khum (Eidillah il-Akbar)
+    month: 12
+    day: 18
+    category: eid
+
+  # --- Every Hijri month ---
+  - id: darees-majlis
+    name: 16mi raat Darees ni Majlis
+    recurrence: monthly
+    day: 16
+    category: majlis
+    note: >-
+      Held on the niyyat of Syedna Hatim Mohiyuddin (RA), Syedna Taher
+      Saifuddin (RA) and Al Hayyul Muqaddas Syedna Mohammed Burhanuddin (RA).
+      Typically programmed on 15mi as an evening majlis (16mi raat).

@@ -1,0 +1,9 @@
+# Pinned exactly. core/misri.py and core/generate.py need only PyYAML;
+# the rest is core/sweep.py (Gmail + Google Calendar + Claude extraction).
+PyYAML==6.0.3
+
+anthropic==1.0.0
+pydantic==2.13.4
+google-api-python-client==2.198.0
+google-auth==2.55.1
+google-auth-oauthlib==1.4.0
