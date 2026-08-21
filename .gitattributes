@@ -2,3 +2,9 @@
 # by python or by GitHub Actions on Linux, so CRLF buys nothing and only makes
 # diffs noisy when the repo is edited from Windows.
 * text=auto eol=lf
+
+# RFC 5545 requires CRLF, and generate.py writes \r\n deliberately. .ics is
+# gitignored today, so this only matters if that ever changes -- but if it does,
+# the rule above would quietly rewrite a valid calendar into one some parsers
+# reject. Leave .ics bytes alone.
+*.ics -text
