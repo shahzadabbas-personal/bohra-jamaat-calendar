@@ -73,6 +73,20 @@ It reads no mail and calls no model, so it costs nothing to run. It never
 deletes an event carrying an announcement stamp, and it ignores anything outside
 the range you generated.
 
+## Running it on a schedule
+
+`tools/run_sweep.py` is a runner for Windows Task Scheduler. It launches under
+`pythonw.exe`, so no console window appears, and writes to `logs/`.
+
+Schedule it daily rather than weekly. While the OAuth app sits in Testing, Google
+expires the authorisation seven days after consent rather than seven days after
+last use, so a weekly run lands on that boundary and fails most weeks. A daily
+run turns each re-approval into a week of unattended operation, and puts
+announcements on the calendar within a day of the jamaat sending them.
+
+When the seven days do run out, the log says so and names the fix: run the sweep
+once in a terminal so a browser can open, approve it, and the schedule resumes.
+
 ## Adding your jamaat
 
 Copy `jamaats/_template/`, rename it, edit `config.yaml`. No code changes.
