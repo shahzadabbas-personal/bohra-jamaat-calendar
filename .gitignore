@@ -10,5 +10,9 @@ raw/
 .env
 credentials.json
 token.json
+# Scheduled-task output. Carries miqaat names and times, not mail bodies,
+# but there is no reason to track it.
+logs/
+
 __pycache__/
 *.pyc

@@ -547,6 +547,7 @@ class Action:
     seq: int = 0
     day: int = 1
     of_days: int = 1
+    hijri: tuple[int, int, int] | None = None
 
 
 def observance_offset(cfg: dict, miqaat_id: str) -> int:
@@ -700,13 +701,15 @@ def plan(resolutions: list[Resolved], cfg: dict, catalog: dict) -> list[Action]:
                     seq=seq,
                     day=index + 1,
                     of_days=len(days),
+                    hijri=(hy, hm, hd),
                 )
             )
     return actions
 
 
-def apply(calendar, calendar_id: str, cfg: dict, actions: list[Action], write: bool):
+def apply(calendar, calendar_id, cfg, catalog, actions, write):
     tz = cfg["jamaat"]["timezone"]
+    by_id = {m["id"]: m for m in catalog["miqaats"]}
     counts = {"promoted": 0, "inserted": 0, "flagged": 0, "skipped": 0}
 
     for a in actions:
@@ -764,16 +767,32 @@ def apply(calendar, calendar_id: str, cfg: dict, actions: list[Action], write: b
             label = f"  (day {a.day} of {a.of_days})" if a.of_days > 1 else ""
             print(f"  INSERT  {a.miqaat_id} {a.when} {start_time}{label}{note}")
             if write:
+                # Name it as generate.py would have. Inserting under the raw
+                # miqaat id puts "urus-mohammed-burhanuddin" on a calendar people
+                # read, which is what happened the first time an ayyam landed.
+                spec = by_id.get(a.miqaat_id, {})
+                name = spec.get("name", a.miqaat_id)
+                if a.hijri:
+                    hy, hm, hd = a.hijri
+                    name = f"{name} ({hd}mi)"
+                    body["description"] = rebuild_description(
+                        f"{hd}mi {MONTHS[hm - 1]} {hy}H\n" + (spec.get("note") or ""),
+                        source=f"announcement {a.mail_date}",
+                        review=None,
+                    )
                 body |= {
                     "iCalUID": a.event_uid,
-                    "summary": a.miqaat_id,
+                    "summary": name,
                     "location": cfg.get("defaults", {}).get("location", ""),
                 }
+                # import, not insert: import is the endpoint that takes an
+                # existing iCalUID. insert rejects a UID Google has already seen,
+                # including one belonging to a deleted event, with a 409.
                 with_backoff(
                     lambda b=body: calendar.events()
-                    .insert(calendarId=calendar_id, body=b, sendUpdates="none")
+                    .import_(calendarId=calendar_id, body=b)
                     .execute(),
-                    what=f"calendar insert {a.event_uid}",
+                    what=f"calendar import {a.event_uid}",
                 )
     return counts
 
@@ -943,7 +962,7 @@ def main() -> None:
 
     actions = plan(resolutions, cfg, catalog)
     print(f"\n{'APPLYING' if args.apply else 'DRY RUN'} ({len(actions)} action(s)):")
-    counts = apply(calendar, calendar_id, cfg, actions, write=args.apply)
+    counts = apply(calendar, calendar_id, cfg, catalog, actions, write=args.apply)
 
     print(
         f"\n{counts['promoted']} promoted, {counts['inserted']} inserted, "
