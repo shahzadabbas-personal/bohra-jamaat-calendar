@@ -54,7 +54,7 @@ import anthropic
 from pydantic import BaseModel
 
 from generate import load, uid
-from misri import MONTHS, to_gregorian
+from misri import MONTHS, from_gregorian, to_gregorian
 
 CATALOG = Path(__file__).parent / "catalog.yaml"
 
@@ -497,11 +497,38 @@ class Action:
     evidence: str = ""
     mail_date: date | None = None
     seq: int = 0
+    day: int = 1
+    of_days: int = 1
 
 
-def plan(resolutions: list[Resolved], cfg: dict) -> list[Action]:
+def observance_offset(cfg: dict, miqaat_id: str) -> int:
+    defaults = cfg.get("defaults", {})
+    entry = next((e for e in cfg.get("observes", []) if e["id"] == miqaat_id), {})
+    return entry.get("observed_offset", defaults.get("observed_offset", 0))
+
+
+def hijri_for(occ: Occurrence, when: date, cfg: dict, miqaat_id: str) -> tuple[int, int]:
+    """The Hijri year and month generate.py used when it built this event's UID.
+
+    Prefer what the mail states. Plenty of announcements give only a Gregorian
+    date ("Waaz on Milad un Nabi - Sunday, 8/23"), and falling back to zero there
+    produces a UID that matches nothing, so the sweep inserts a duplicate beside
+    the real event instead of promoting it. Convert instead -- undoing the
+    jamaat's observance offset first, because generate.py numbered the event from
+    the canonical day, not the day the program runs.
+    """
+    if occ.hijri_year and occ.hijri_month:
+        return occ.hijri_year, occ.hijri_month
+    hy, hm, _ = from_gregorian(when - timedelta(days=observance_offset(cfg, miqaat_id)))
+    return hy, hm
+
+
+def plan(resolutions: list[Resolved], cfg: dict, catalog: dict) -> list[Action]:
     """Group by miqaat and Hijri year so multi-day ayyam fan out over seq."""
     jid = cfg["jamaat"]["id"]
+    # generate.py numbers a monthly majlis by its Hijri month rather than 0, so
+    # the sweep has to use the same convention or it will not find the event.
+    monthly = {m["id"] for m in catalog["miqaats"] if m.get("recurrence") == "monthly"}
     actions: list[Action] = []
     groups: dict[tuple[str, int], list[Resolved]] = {}
 
@@ -524,7 +551,6 @@ def plan(resolutions: list[Resolved], cfg: dict) -> list[Action]:
 
     for (miqaat_id, _), members in groups.items():
         members.sort(key=lambda r: r.when)
-        hy = members[0].occ.hijri_year or 0
         seen: dict[date, Resolved] = {}
         for r in members:
             # Later mail wins for the same day, so a correction beats the
@@ -533,8 +559,14 @@ def plan(resolutions: list[Resolved], cfg: dict) -> list[Action]:
             prior = seen.get(r.when)
             if prior is None or r.mail["date"] >= prior.mail["date"]:
                 seen[r.when] = r
-        for seq, when in enumerate(sorted(seen)):
+        days = sorted(seen)
+        for index, when in enumerate(days):
             r = seen[when]
+            hy, hm = hijri_for(r.occ, when, cfg, miqaat_id)
+            # A monthly majlis is keyed by Hijri month. Anything else is keyed by
+            # its position in the ayyam: day one is the event generate.py already
+            # emitted, later days are genuinely new.
+            seq = hm if miqaat_id in monthly else index
             actions.append(
                 Action(
                     verb="promote",
@@ -545,6 +577,8 @@ def plan(resolutions: list[Resolved], cfg: dict) -> list[Action]:
                     evidence=r.occ.evidence,
                     mail_date=r.mail["date"],
                     seq=seq,
+                    day=index + 1,
+                    of_days=len(days),
                 )
             )
     return actions
@@ -602,7 +636,8 @@ def apply(calendar, calendar_id: str, cfg: dict, actions: list[Action], write: b
         else:
             # A day of a multi-day ayyam that generate.py emitted as one block.
             counts["inserted"] += 1
-            print(f"  INSERT  {a.miqaat_id} {a.when} {start_time}  (day {a.seq + 1})")
+            label = f"  (day {a.day} of {a.of_days})" if a.of_days > 1 else ""
+            print(f"  INSERT  {a.miqaat_id} {a.when} {start_time}{label}")
             if write:
                 body |= {
                     "iCalUID": a.event_uid,
@@ -660,7 +695,7 @@ def main() -> None:
 
     check_kabisa(resolutions)
 
-    actions = plan(resolutions, cfg)
+    actions = plan(resolutions, cfg, catalog)
     print(f"\n{'APPLYING' if args.apply else 'DRY RUN'} ({len(actions)} action(s)):")
     counts = apply(calendar, calendar_id, cfg, actions, write=args.apply)
 

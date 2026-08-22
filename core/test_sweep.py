@@ -26,6 +26,7 @@ from googleapiclient.errors import HttpError
 import sweep
 from generate import uid as generate_uid
 from sweep import (
+    hijri_for,
     Occurrence,
     Resolved,
     SweepError,
@@ -215,7 +216,7 @@ def checks_ok(_label: str) -> None:
 # --- Planning ----------------------------------------------------------------
 
 
-def test_ayyam_fanout(cfg, ids):
+def test_ayyam_fanout(cfg, ids, catalog):
     """A three-day urus must become three dated events, not one."""
     resolutions = []
     for offset, when in enumerate(["2026-08-25", "2026-08-26", "2026-08-27"]):
@@ -231,7 +232,7 @@ def test_ayyam_fanout(cfg, ids):
         # matters here, so resolve without the cross-check getting in the way.
         resolutions.append(Resolved(occ=occ, mail=MAIL, when=date.fromisoformat(when)))
 
-    actions = plan(resolutions, cfg)
+    actions = plan(resolutions, cfg, catalog)
     eq("ayyam yields three actions", len(actions), 3)
     eq("ayyam seq numbering", [a.seq for a in actions], [0, 1, 2])
     eq("ayyam uids are distinct", len({a.event_uid for a in actions}), 3)
@@ -246,26 +247,83 @@ def test_ayyam_fanout(cfg, ids):
     )
 
 
-def test_correction_wins(cfg, ids):
+def test_correction_wins(cfg, ids, catalog):
     early = resolve(occurrence(start_time="18:45"), {**MAIL, "date": date(2026, 7, 20)}, ids)
     late = resolve(
         occurrence(start_time="20:15"),
         {"date": date(2026, 7, 30), "kind": "correction", "subject": "Time change:"},
         ids,
     )
-    actions = plan([early, late], cfg)
+    actions = plan([early, late], cfg, catalog)
     eq("correction collapses to one event", len(actions), 1)
     eq("later mail wins", actions[0].start_time, "20:15")
 
     # Order of arrival in the list must not change the outcome.
-    eq("order independent", plan([late, early], cfg)[0].start_time, "20:15")
+    eq("order independent", plan([late, early], cfg, catalog)[0].start_time, "20:15")
 
 
-def test_ambiguous_never_promotes(cfg, ids):
+def test_ambiguous_never_promotes(cfg, ids, catalog):
     flagged = resolve(occurrence(confidence="low"), MAIL, ids)
-    actions = plan([flagged], cfg)
+    actions = plan([flagged], cfg, catalog)
     eq("ambiguous becomes review", [a.verb for a in actions], ["review"])
     eq("review carries a reason", bool(actions[0].reason), True)
+
+
+def test_uid_matches_generate(cfg, ids, catalog):
+    """Every promote must land on the UID generate.py actually emitted.
+
+    Both halves of this regressed on the first live sweep: a mail with no Hijri
+    year produced a UID built from year 0, and a monthly majlis was keyed by 0
+    instead of its Hijri month. Each one inserted a duplicate junk event beside
+    the real one instead of promoting it.
+    """
+    # 1448H Milad, announced as "Sunday, 8/23" with no Hijri date anywhere.
+    bare = occurrence(
+        miqaat_id="milad-un-nabi",
+        hijri_year=None,
+        hijri_month=None,
+        hijri_day=None,
+        gregorian_date="2026-08-23",
+    )
+    eq("hijri derived when mail omits it", hijri_for(bare, date(2026, 8, 23), cfg, "milad-un-nabi"),
+       (1448, 3))
+    action = plan([Resolved(occ=bare, mail=MAIL, when=date(2026, 8, 23))], cfg, catalog)[0]
+    eq(
+        "milad uid matches generate.py",
+        action.event_uid,
+        generate_uid("nj-burhani", "milad-un-nabi", 1448, 0),
+    )
+
+    # A monthly darees majlis. generate.py keys these by Hijri month, not 0.
+    darees = occurrence(
+        miqaat_id="darees-majlis",
+        hijri_year=1448,
+        hijri_month=2,
+        hijri_day=16,
+        gregorian_date="2026-07-30",
+    )
+    action = plan([Resolved(occ=darees, mail=MAIL, when=date(2026, 7, 30))], cfg, catalog)[0]
+    eq("monthly majlis keyed by hijri month", action.seq, 2)
+    eq(
+        "darees uid matches generate.py",
+        action.event_uid,
+        generate_uid("nj-burhani", "darees-majlis", 1448, 2),
+    )
+
+    # Two darees in one Gregorian year must not collide.
+    later = occurrence(
+        miqaat_id="darees-majlis", hijri_year=1448, hijri_month=3, hijri_day=16,
+        gregorian_date="2026-08-27",
+    )
+    actions = plan(
+        [
+            Resolved(occ=darees, mail=MAIL, when=date(2026, 7, 30)),
+            Resolved(occ=later, mail=MAIL, when=date(2026, 8, 27)),
+        ],
+        cfg, catalog,
+    )
+    eq("two darees stay distinct", len({a.event_uid for a in actions}), 2)
+    eq("darees seqs are their months", sorted(a.seq for a in actions), [2, 3])
 
 
 def test_timing(cfg):
@@ -421,9 +479,10 @@ def self_test() -> None:
     test_idempotency()
     test_resolve(ids)
     test_kabisa()
-    test_ayyam_fanout(cfg, ids)
-    test_correction_wins(cfg, ids)
-    test_ambiguous_never_promotes(cfg, ids)
+    test_ayyam_fanout(cfg, ids, catalog)
+    test_correction_wins(cfg, ids, catalog)
+    test_ambiguous_never_promotes(cfg, ids, catalog)
+    test_uid_matches_generate(cfg, ids, catalog)
     test_timing(cfg)
     test_backoff()
     test_body_extraction()

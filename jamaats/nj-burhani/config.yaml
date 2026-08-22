@@ -15,7 +15,7 @@ jamaat:
   timezone: America/New_York
   # Google Calendar settings -> Integrate calendar -> Calendar ID.
   # sweep.py writes announced times here.
-  calendar_id: ""
+  calendar_id: "30719c95d7719db27837683f5605dea90dffaef4e3a9519650e87ed29f446105@group.calendar.google.com"
 
 sources:
   announcement_senders:
