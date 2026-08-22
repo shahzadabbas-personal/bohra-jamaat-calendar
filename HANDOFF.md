@@ -18,10 +18,15 @@ not. Generated dates go in as all-day or default-time events; the announcement
 sweep promotes them to real times. Austin's jamaat independently arrived at the
 same split, which is decent validation.
 
-**Native shared Google Calendar, not a published ICS feed.** Google refreshes
-subscribed feeds only every 12–24 hours. A timing correction that lands three
-days before a majlis has to propagate immediately. ICS is used only for the
-one-time bulk import.
+**Native shared Google Calendar, not a published ICS feed.** ICS serves the
+one-time bulk import; after that the calendar is the live artifact and the sweep
+edits it directly.
+
+Corrected later: this decision rested on Google polling *inbound* subscriptions
+every 12–24 hours, which is a different direction from publishing a calendar's
+own `.ics`. Google serves that outbound feed with caching disabled, so
+subscribing to it is not stale, and it is how iPhones get the calendar at all.
+See the sharing section in the README.
 
 **`observed_offset` lives in jamaat config, not in the converter.** The Islamic
 day starts at maghrib, so an evening majlis for Hijri day N is held on the
