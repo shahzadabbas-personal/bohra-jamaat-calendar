@@ -26,6 +26,7 @@ from googleapiclient.errors import HttpError
 import sweep
 from generate import days_in, uid as generate_uid
 from sweep import (
+    find_orphans,
     hijri_for,
     merge_day,
     Occurrence,
@@ -445,6 +446,65 @@ def test_generate_day_selection(catalog):
         eq(f"aakhri jumoa {hy}H is the last friday", later, [])
 
 
+def test_find_orphans():
+    """Prune must delete ghosts without eating anything real.
+
+    A ghost is an event generate.py no longer produces: the Shehrullah darees
+    survived on the live calendar because an ICS import can add and update but
+    never remove.
+    """
+    def ev(uid, day, summary="x", desc="source: generated"):
+        return {
+            "iCalUID": uid,
+            "summary": summary,
+            "description": desc,
+            "start": {"dateTime": f"2026-06-{day:02d}T19:00:00-04:00"},
+        }
+
+    span = (date(2026, 6, 1), date(2026, 6, 30))
+    wanted = {"keep@x"}
+
+    # The plain case: not generated, inside the span, still generated-sourced.
+    deletable, review = find_orphans([ev("keep@x", 10), ev("ghost@x", 11)], wanted, span)
+    eq("generated event kept", [e["iCalUID"] for e in deletable], ["ghost@x"])
+    eq("nothing sent to review", review, [])
+
+    # An announcement-stamped event is never deleted. The sweep inserts days of a
+    # multi-day ayyam that generate.py does not emit, and jamaats add events by
+    # hand; deleting either would be destroying real information.
+    stamped = ev("swept@x", 12, desc="source: announcement 2026-06-01")
+    deletable, review = find_orphans([stamped], wanted, span)
+    eq("announcement event not deleted", deletable, [])
+    eq("announcement event reported", [e["iCalUID"] for e in review], ["swept@x"])
+
+    # Events outside the generated span are out of scope, not orphans. Running
+    # with a narrower --years than the calendar holds would otherwise propose
+    # deleting every event in the years it did not generate.
+    outside = {
+        "iCalUID": "future@x",
+        "summary": "next year",
+        "description": "source: generated",
+        "start": {"dateTime": "2027-06-10T19:00:00-04:00"},
+    }
+    deletable, review = find_orphans([outside], wanted, span)
+    eq("outside the span is ignored", (deletable, review), ([], []))
+
+    # All-day events carry `date`, not `dateTime`.
+    allday = {
+        "iCalUID": "banner@x",
+        "summary": "banner",
+        "description": "source: generated",
+        "start": {"date": "2026-06-15"},
+    }
+    eq("all-day orphan found",
+       [e["iCalUID"] for e in find_orphans([allday], wanted, span)[0]], ["banner@x"])
+
+    # An event with no start at all must not crash it.
+    eq("missing start ignored",
+       find_orphans([{"iCalUID": "odd@x", "summary": "?", "start": {}}], wanted, span),
+       ([], []))
+
+
 def test_timing(cfg):
     eq("per-entry start time", timing(cfg, "milad-un-nabi")[0], "18:45")
     eq("falls back to default", timing(cfg, "urus-fakhruddin-shaheed")[0], "19:00")
@@ -612,6 +672,7 @@ def self_test() -> None:
     test_uid_matches_generate(cfg, ids, catalog)
     test_day_range_uids(cfg, ids, catalog)
     test_generate_day_selection(catalog)
+    test_find_orphans()
     test_timing(cfg)
     test_backoff()
     test_body_extraction()

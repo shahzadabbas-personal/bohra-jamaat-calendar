@@ -53,7 +53,7 @@ from typing import Literal
 import anthropic
 from pydantic import BaseModel
 
-from generate import DATE_CAVEAT, TIMING_CAVEAT, load, uid
+from generate import DATE_CAVEAT, TIMING_CAVEAT, expand, load, uid
 from misri import MONTHS, from_gregorian, to_gregorian
 
 CATALOG = Path(__file__).parent / "catalog.yaml"
@@ -778,6 +778,103 @@ def apply(calendar, calendar_id: str, cfg: dict, actions: list[Action], write: b
     return counts
 
 
+# --- Prune -------------------------------------------------------------------
+#
+# generate.py and the ICS import can add and update events but never remove one.
+# Anything dropped from the config -- a miqaat the jamaat stops observing, a
+# corrected skip_months, a renamed id -- leaves a ghost on the calendar that
+# nothing reports. The Shehrullah darees survived exactly that way.
+
+
+def list_all_events(calendar, calendar_id: str) -> list[dict]:
+    events, token = [], None
+    while True:
+        page = with_backoff(
+            lambda t=token: calendar.events()
+            .list(calendarId=calendar_id, maxResults=250, pageToken=t, showDeleted=False)
+            .execute(),
+            what="calendar list",
+        )
+        events += page.get("items", [])
+        token = page.get("nextPageToken")
+        if not token:
+            break
+    return events
+
+
+def event_start(ev: dict) -> date | None:
+    raw = ev["start"].get("dateTime") or ev["start"].get("date")
+    return date.fromisoformat(raw[:10]) if raw else None
+
+
+def find_orphans(
+    events: list[dict], wanted: set[str], span: tuple[date, date]
+) -> tuple[list[dict], list[dict]]:
+    """Split calendar events into (safe to delete, report only).
+
+    Two rules keep this from eating real events:
+
+    Only events inside the span generation actually covered are considered. Run
+    with a narrower --years than the calendar holds and every event outside it
+    would otherwise look orphaned.
+
+    An event carrying `source: announcement` is never deleted, only reported.
+    The sweep itself inserts days of a multi-day ayyam that generate.py does not
+    emit, and a jamaat may add events by hand. Neither is rubbish.
+    """
+    deletable, review = [], []
+    for ev in events:
+        if ev.get("iCalUID") in wanted:
+            continue
+        start = event_start(ev)
+        if start is None or not (span[0] <= start <= span[1]):
+            continue
+        if "source: announcement" in (ev.get("description") or ""):
+            review.append(ev)
+        else:
+            deletable.append(ev)
+    return deletable, review
+
+
+def prune(calendar, calendar_id, cfg, catalog, start_year, years, write) -> None:
+    generated = expand(cfg, catalog, start_year, years)
+    wanted = {e["uid"] for e in generated}
+    span = (
+        min(e["date"] for e in generated),
+        max(e["date"] + timedelta(days=e["span_days"]) for e in generated),
+    )
+    events = list_all_events(calendar, calendar_id)
+    deletable, review = find_orphans(events, wanted, span)
+
+    print(f"{len(generated)} events generated for {start_year}H"
+          f"-{start_year + years - 1}H, {len(events)} on the calendar")
+    print(f"comparing over {span[0]} .. {span[1]}\n")
+
+    if not deletable and not review:
+        print("No orphans. The calendar matches what generate.py produces.")
+        return
+
+    for ev in deletable:
+        print(f"  ORPHAN  {event_start(ev)}  {ev['summary'][:52]}")
+        if write:
+            with_backoff(
+                lambda e=ev: calendar.events()
+                .delete(calendarId=calendar_id, eventId=e["id"], sendUpdates="none")
+                .execute(),
+                what=f"calendar delete {ev.get('iCalUID')}",
+            )
+
+    for ev in review:
+        print(f"  REVIEW  {event_start(ev)}  {ev['summary'][:52]}")
+        print("          carries an announcement stamp; not deleted")
+
+    print(f"\n{len(deletable)} orphan(s)"
+          f"{' deleted' if write else ' would be deleted'}, "
+          f"{len(review)} left for review")
+    if not write and deletable:
+        print("Dry run -- nothing was deleted. Re-run with --apply.")
+
+
 # --- Entry point -------------------------------------------------------------
 
 
@@ -796,6 +893,13 @@ def main() -> None:
     p.add_argument("--since", type=date.fromisoformat, default=None)
     p.add_argument("--days", type=int, default=8, help="window if --since is absent")
     p.add_argument("--apply", action="store_true", help="actually write; default is a dry run")
+    p.add_argument(
+        "--prune",
+        action="store_true",
+        help="report calendar events generate.py no longer produces, instead of sweeping",
+    )
+    p.add_argument("--years", type=int, default=1, help="--prune: years generation covers")
+    p.add_argument("--start-year", type=int, default=None, help="--prune: Hijri start year")
     args = p.parse_args()
 
     cfg = load(args.jamaat_dir / "config.yaml")
@@ -809,6 +913,14 @@ def main() -> None:
             f"{args.jamaat_dir / 'config.yaml'} (Google Calendar settings -> "
             f"Integrate calendar -> Calendar ID)."
         )
+
+    if args.prune:
+        # No Gmail and no extraction: this only compares the calendar against
+        # what generate.py produces, so it costs nothing to run.
+        _, calendar = google_services(args.jamaat_dir)
+        start = args.start_year or from_gregorian(date.today())[0]
+        prune(calendar, calendar_id, cfg, catalog, start, args.years, write=args.apply)
+        return
 
     since = args.since or (date.today() - timedelta(days=args.days))
     gmail, calendar = google_services(args.jamaat_dir)

@@ -61,6 +61,18 @@ The sweep needs a Gmail and Calendar OAuth client at `jamaats/<id>/credentials.j
 and an `ANTHROPIC_API_KEY` in your environment. It leaves anything it cannot read
 cleanly untouched and prints it for you to check by hand.
 
+Importing can add and update events but never remove one, so an entry you drop
+from the config leaves a ghost on the calendar. `--prune` finds those:
+
+```bash
+python3 core/sweep.py jamaats/nj-burhani --prune            # list them
+python3 core/sweep.py jamaats/nj-burhani --prune --apply    # delete them
+```
+
+It reads no mail and calls no model, so it costs nothing to run. It never
+deletes an event carrying an announcement stamp, and it ignores anything outside
+the range you generated.
+
 ## Adding your jamaat
 
 Copy `jamaats/_template/`, rename it, edit `config.yaml`. No code changes.
