@@ -181,7 +181,18 @@ def main() -> None:
     events = expand(cfg, catalog, start, args.years)
 
     out = args.out or (args.jamaat_dir / f"{cfg['jamaat']['id']}.ics")
-    out.write_text(render(events, cfg))
+    # newline="" is load-bearing on Windows. RFC 5545 requires CRLF and render()
+    # emits it, but text mode would translate the \n half again and write \r\r\n,
+    # which Google Calendar rejects with "unable to process your iCal file".
+    out.write_text(render(events, cfg), encoding="utf-8", newline="")
+
+    # Check what actually landed on disk, not what we meant to write. A calendar
+    # that fails to import reports "0 of 0 events" and nothing here would have
+    # noticed: this script happily printed a success line while producing a file
+    # Google could not read.
+    written = out.read_bytes()
+    if b"\r\r\n" in written or written.count(b"\n") != written.count(b"\r\n"):
+        raise SystemExit(f"{out} has malformed line endings; RFC 5545 requires CRLF")
 
     tentative = sum(1 for e in events if not e["confirmed"])
     print(f"{len(events)} events, {start}H-{start + args.years - 1}H -> {out}")
