@@ -127,8 +127,65 @@ canonical Hijri date. `-1` means the program runs the previous evening — corre
 for most evening majlis, since after maghrib it is already that Hijri day.
 
 Start with the miqaats you're sure about. Twenty accurate events beat two
-hundred guesses. Anything with `confirmed: false` renders as TENTATIVE and
-carries a warning in its description.
+hundred guesses. Anything with `confirmed: false` carries a line in its
+description saying the date is a projection and telling the reader to check it
+against the taqweem, until a sweep confirms it.
+
+### Google credentials
+
+The sweep reads your jamaat's mail and writes your calendar, so it needs an OAuth
+client of your own. Google reorganised this console in 2025; the labels below are
+the current ones.
+
+1. Sign in at <https://console.cloud.google.com> with the account that receives
+   the announcements. If a different account owns the calendar, share the
+   calendar with the mail account rather than splitting the credentials.
+2. Create a project. **No organization** is the right parent for a personal
+   account.
+3. Enable both APIs from the search bar: **Gmail API**, then **Google Calendar
+   API**. Missing one fails later, and the two failures look nothing alike.
+4. **Google Auth Platform → Branding → Get started.** Give an app name, pick your
+   address as the user support email, choose **External**, add a developer
+   contact address, accept the policy, Create. Those three fields are all it
+   asks for.
+5. Do not upload a logo. The page says so itself: a logo forces the app into
+   verification.
+6. **Audience → Test users → Add users → your own address.** Google refuses the
+   login without this, and the error does not say why.
+7. **Clients → Create client → Application type: Desktop app → Create.** A Web
+   application client fails with a redirect URI error.
+8. Download the JSON, rename it `credentials.json`, and drop it in your jamaat
+   directory beside `config.yaml`. `.gitignore` already covers it.
+
+The first sweep opens a browser. Google shows "Google hasn't verified this app",
+which is normal for a personal client: **Advanced → Go to (your app name)**, then
+approve both permissions. A `token.json` appears next to the credentials.
+
+Then the sting. While the app's publishing status is Testing, Google expires that
+authorisation **seven days after consent**, no matter how often you use it. The
+sweep will fail on the eighth day and the log says so. Publishing the app removes
+the expiry, but Google requires a home page, privacy policy and terms of service
+on a domain verified in Search Console before an external app can go to
+production. For one person running one jamaat, re-approving weekly is usually the
+smaller cost.
+
+### Extraction
+
+The sweep needs `ANTHROPIC_API_KEY` in the environment. A week of announcements
+costs a fraction of a cent; reading a year of them, which is worth doing once to
+find miqaats your catalog is missing, costs a few dollars.
+
+### Your own sharing page
+
+The page this repo points at serves one calendar. Copy `index.html` from
+`shahzadabbas-personal/miqaat`, replace the calendar id in the `webcal://` link,
+and replace the `cid` value with your own id base64-encoded:
+
+```bash
+printf '%s' 'your-id@group.calendar.google.com' | base64
+```
+
+Publish it anywhere static. It needs no build step and loads nothing external.
 
 ## Privacy
 
