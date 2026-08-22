@@ -91,28 +91,43 @@ def expand(cfg: dict, catalog: dict, start_year: int, years: int) -> list[dict]:
         confirmed = entry.get("confirmed", True)
         note = entry.get("note") or spec.get("note") or ""
 
-        for hy in range(start_year, start_year + years):
-            months = range(1, 13) if spec.get("recurrence") == "monthly" else [spec["month"]]
-            for month in months:
-                canonical = MisriDate(hy, month, spec["day"])
-                observed = canonical.gregorian + timedelta(days=offset)
-                span = spec.get("duration_days", 1)
+        monthly = spec.get("recurrence") == "monthly"
+        # `day_range: [first, last]` emits one event per Hijri day in the range.
+        # Ashara needs it: eight waaz and eight majlis on 2mi-9mi are sixteen
+        # separate programs with their own times, not one block.
+        first, last = spec.get("day_range", (spec.get("day"), spec.get("day")))
 
-                events.append(
-                    {
-                        "uid": uid(jid, mid, hy, month if len(list(months)) > 1 else 0),
-                        "summary": spec["name"],
-                        "date": observed,
-                        "start_time": start_time,
-                        "duration": duration,
-                        "span_days": span,
-                        "location": location,
-                        "canonical": canonical,
-                        "confirmed": confirmed,
-                        "note": note,
-                        "source": "generated",
-                    }
-                )
+        for hy in range(start_year, start_year + years):
+            months = range(1, 13) if monthly else [spec["month"]]
+            for month in months:
+                for day in range(first, last + 1):
+                    canonical = MisriDate(hy, month, day)
+                    observed = canonical.gregorian + timedelta(days=offset)
+                    span = spec.get("duration_days", 1)
+
+                    # The UID seq has to stay stable and unique per occurrence:
+                    # by Hijri month for a monthly majlis, by Hijri day across a
+                    # range, 0 otherwise. sweep.py mirrors this exactly.
+                    seq = month if monthly else (day if spec.get("day_range") else 0)
+                    name = spec["name"]
+                    if spec.get("day_range"):
+                        name = f"{name} ({day}mi)"
+
+                    events.append(
+                        {
+                            "uid": uid(jid, mid, hy, seq),
+                            "summary": name,
+                            "date": observed,
+                            "start_time": start_time,
+                            "duration": duration,
+                            "span_days": span,
+                            "location": location,
+                            "canonical": canonical,
+                            "confirmed": confirmed,
+                            "note": note,
+                            "source": "generated",
+                        }
+                    )
     return sorted(events, key=lambda e: e["date"])
 
 

@@ -565,6 +565,7 @@ class Merged:
     mail_date: date | None = None
     hijri_year: int | None = None
     hijri_month: int | None = None
+    hijri_day: int | None = None
     conflict: str | None = None
 
 
@@ -594,12 +595,13 @@ def merge_day(entries: list[Resolved]) -> Merged:
             m.evidence = occ.evidence
         if occ.hijri_year and occ.hijri_month:
             m.hijri_year, m.hijri_month = occ.hijri_year, occ.hijri_month
+            m.hijri_day = occ.hijri_day
         # The stamp tracks the newest mail, so a re-sweep skips what it has read.
         m.mail_date = r.mail["date"]
     return m
 
 
-def hijri_for(occ, when: date, cfg: dict, miqaat_id: str) -> tuple[int, int]:
+def hijri_for(occ, when: date, cfg: dict, miqaat_id: str) -> tuple[int, int, int]:
     """The Hijri year and month generate.py used when it built this event's UID.
 
     Prefer what the mail states. Plenty of announcements give only a Gregorian
@@ -609,10 +611,12 @@ def hijri_for(occ, when: date, cfg: dict, miqaat_id: str) -> tuple[int, int]:
     jamaat's observance offset first, because generate.py numbered the event from
     the canonical day, not the day the program runs.
     """
-    if occ.hijri_year and occ.hijri_month:
-        return occ.hijri_year, occ.hijri_month
-    hy, hm, _ = from_gregorian(when - timedelta(days=observance_offset(cfg, miqaat_id)))
-    return hy, hm
+    derived = from_gregorian(when - timedelta(days=observance_offset(cfg, miqaat_id)))
+    return (
+        occ.hijri_year or derived[0],
+        occ.hijri_month or derived[1],
+        occ.hijri_day or derived[2],
+    )
 
 
 def plan(resolutions: list[Resolved], cfg: dict, catalog: dict) -> list[Action]:
@@ -621,6 +625,8 @@ def plan(resolutions: list[Resolved], cfg: dict, catalog: dict) -> list[Action]:
     # generate.py numbers a monthly majlis by its Hijri month rather than 0, so
     # the sweep has to use the same convention or it will not find the event.
     monthly = {m["id"] for m in catalog["miqaats"] if m.get("recurrence") == "monthly"}
+    # day_range entries (the Ashara waaz and majlis) are keyed by Hijri day.
+    ranged = {m["id"] for m in catalog["miqaats"] if m.get("day_range")}
     actions: list[Action] = []
     groups: dict[tuple[str, int], list[Resolved]] = {}
 
@@ -664,11 +670,16 @@ def plan(resolutions: list[Resolved], cfg: dict, catalog: dict) -> list[Action]:
                     )
                 )
                 continue
-            hy, hm = hijri_for(r, when, cfg, miqaat_id)
-            # A monthly majlis is keyed by Hijri month. Anything else is keyed by
-            # its position in the ayyam: day one is the event generate.py already
-            # emitted, later days are genuinely new.
-            seq = hm if miqaat_id in monthly else index
+            hy, hm, hd = hijri_for(r, when, cfg, miqaat_id)
+            # Mirror generate.py exactly: monthly majlis by Hijri month, a
+            # day_range programme by Hijri day, anything else by its position in
+            # the ayyam -- day one being the event generate.py already emitted.
+            if miqaat_id in monthly:
+                seq = hm
+            elif miqaat_id in ranged:
+                seq = hd
+            else:
+                seq = index
             actions.append(
                 Action(
                     verb="promote",

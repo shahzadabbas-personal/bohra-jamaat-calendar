@@ -345,7 +345,7 @@ def test_uid_matches_generate(cfg, ids, catalog):
         gregorian_date="2026-08-23",
     )
     eq("hijri derived when mail omits it", hijri_for(bare, date(2026, 8, 23), cfg, "milad-un-nabi"),
-       (1448, 3))
+       (1448, 3, 12))
     action = plan([Resolved(occ=bare, mail=MAIL, when=date(2026, 8, 23))], cfg, catalog)[0]
     eq(
         "milad uid matches generate.py",
@@ -383,6 +383,41 @@ def test_uid_matches_generate(cfg, ids, catalog):
     )
     eq("two darees stay distinct", len({a.event_uid for a in actions}), 2)
     eq("darees seqs are their months", sorted(a.seq for a in actions), [2, 3])
+
+
+def test_day_range_uids(cfg, ids, catalog):
+    """Ashara waaz and majlis are keyed by Hijri day, as generate.py emits them.
+
+    Same failure as the monthly darees bug: a seq the sweep invents rather than
+    mirrors puts a duplicate beside the real event instead of promoting it.
+    """
+    # 3mi Moharram 1448H fell on 17 June 2026.
+    for miqaat_id in ("ashara-waaz", "ashara-raat-majlis"):
+        occ = occurrence(miqaat_id=miqaat_id, hijri_year=1448, hijri_month=1,
+                         hijri_day=3, gregorian_date="2026-06-17")
+        action = plan([Resolved(occ=occ, mail=MAIL, when=date(2026, 6, 17))],
+                      cfg, catalog)[0]
+        eq(f"{miqaat_id} keyed by hijri day", action.seq, 3)
+        eq(f"{miqaat_id} uid matches generate.py", action.event_uid,
+           generate_uid("nj-burhani", miqaat_id, 1448, 3))
+
+    # Every day of the range stays distinct.
+    days = [
+        Resolved(occ=occurrence(miqaat_id="ashara-waaz", hijri_year=1448,
+                                hijri_month=1, hijri_day=d,
+                                gregorian_date=f"2026-06-{14 + d:02d}"),
+                 mail=MAIL, when=date(2026, 6, 14 + d))
+        for d in range(2, 10)
+    ]
+    actions = plan(days, cfg, catalog)
+    eq("eight waaz stay distinct", len({a.event_uid for a in actions}), 8)
+    eq("waaz seqs are their hijri days", sorted(a.seq for a in actions), list(range(2, 10)))
+
+    # And a mail with no Hijri date at all still lands on the right day.
+    bare = occurrence(miqaat_id="ashara-waaz", hijri_year=None, hijri_month=None,
+                      hijri_day=None, gregorian_date="2026-06-17")
+    eq("day derived when mail omits it",
+       plan([Resolved(occ=bare, mail=MAIL, when=date(2026, 6, 17))], cfg, catalog)[0].seq, 3)
 
 
 def test_timing(cfg):
@@ -550,6 +585,7 @@ def self_test() -> None:
     test_followups(cfg, ids, catalog)
     test_ambiguous_never_promotes(cfg, ids, catalog)
     test_uid_matches_generate(cfg, ids, catalog)
+    test_day_range_uids(cfg, ids, catalog)
     test_timing(cfg)
     test_backoff()
     test_body_extraction()

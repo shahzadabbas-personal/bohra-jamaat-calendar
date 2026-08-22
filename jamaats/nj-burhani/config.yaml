@@ -54,7 +54,30 @@ observes:
 
   - id: ashara-mubaraka
     observed_offset: 0
-    duration_minutes: 0        # all-day; relay center in 1448H
+    duration_minutes: 0        # all-day banner over the ten days
+    confirmed: false
+    note: Relay center in 1448H.
+
+  - id: ashara-waaz
+    observed_offset: 0
+    start_time: "10:30"
+    duration_minutes: 180      # runs until zohr/asr namaz
+    confirmed: false
+
+  - id: ashara-raat-majlis
+    observed_offset: 0
+    start_time: "19:30"
+    duration_minutes: 150
+    confirmed: false
+    note: >-
+      Held roughly an hour before maghrib. 19:30 is right while Ashara falls in
+      June; Ashara moves about eleven days earlier each year, so revisit this as
+      maghrib shifts.
+
+  - id: ashura
+    observed_offset: 0
+    start_time: "10:30"
+    duration_minutes: 600      # morning waaz through to maghrib
     confirmed: false
 
   - id: urus-hatim-mohiyuddin

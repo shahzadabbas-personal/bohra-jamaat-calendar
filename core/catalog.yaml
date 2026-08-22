@@ -21,9 +21,26 @@ miqaats:
     category: ashara
 
   - id: ashura
-    name: Ashura - Yaum e Ashura
+    name: Yaum-e-Ashura
     month: 1
     day: 10
+    category: ashara
+    note: >-
+      The day programme runs from the morning waaz until maghrib, so it is one
+      long block rather than a waaz and a separate majlis.
+
+  # Ashara programmes run 2mi-9mi. Nothing is held on 1mi, and 10mi is Ashura
+  # itself, which is a single all-day programme rather than a waaz plus majlis.
+  - id: ashara-waaz
+    name: Ashara Mubaraka - Waaz
+    month: 1
+    day_range: [2, 9]
+    category: ashara
+
+  - id: ashara-raat-majlis
+    name: Ashara Mubaraka - Raat ni Majlis
+    month: 1
+    day_range: [2, 9]
     category: ashara
 
   - id: urus-hatim-mohiyuddin
