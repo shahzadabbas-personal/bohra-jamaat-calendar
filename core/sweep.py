@@ -664,7 +664,11 @@ def apply(calendar, calendar_id: str, cfg: dict, actions: list[Action], write: b
             continue
 
         default_time, minutes = timing(cfg, a.miqaat_id)
+        # Distinguish a time the jamaat announced from one this config assumed.
+        # Both end up on the calendar; only one of them is evidence.
+        announced = bool(a.start_time)
         start_time = a.start_time or default_time
+        note = "" if announced else "  (time not announced, using config default)"
         hh, mm = (int(x) for x in start_time.split(":"))
         begins = datetime.combine(a.when, datetime.min.time()).replace(hour=hh, minute=mm)
         ends = begins + timedelta(minutes=minutes or 150)
@@ -682,7 +686,7 @@ def apply(calendar, calendar_id: str, cfg: dict, actions: list[Action], write: b
 
         if event:
             counts["promoted"] += 1
-            print(f"  PROMOTE {a.miqaat_id} {a.when} {start_time}")
+            print(f"  PROMOTE {a.miqaat_id} {a.when} {start_time}{note}")
             if write:
                 with_backoff(
                     lambda e=event, b=body: calendar.events()
@@ -699,7 +703,7 @@ def apply(calendar, calendar_id: str, cfg: dict, actions: list[Action], write: b
             # A day of a multi-day ayyam that generate.py emitted as one block.
             counts["inserted"] += 1
             label = f"  (day {a.day} of {a.of_days})" if a.of_days > 1 else ""
-            print(f"  INSERT  {a.miqaat_id} {a.when} {start_time}{label}")
+            print(f"  INSERT  {a.miqaat_id} {a.when} {start_time}{label}{note}")
             if write:
                 body |= {
                     "iCalUID": a.event_uid,
