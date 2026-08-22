@@ -22,6 +22,17 @@ from misri import MONTHS, MisriDate, from_gregorian, to_gregorian
 
 CATALOG = Path(__file__).parent / "catalog.yaml"
 
+# Every event on a shared calendar reads as real, so the honest signal about an
+# unverified timing belongs in the description rather than in STATUS. A member
+# seeing "tentative" reads it as "might not happen" or "I have not replied yet" --
+# neither of which is what it meant. The sweep removes these lines once an
+# announcement confirms the event.
+TIMING_CAVEAT = "Timing not yet confirmed against the jamaat announcement."
+DATE_CAVEAT = (
+    "Date varies by year and is projected from prior years. "
+    "Verify against the printed taqweem."
+)
+
 
 def load(path: Path) -> dict:
     with open(path) as f:
@@ -124,10 +135,9 @@ def render(events: list[dict], cfg: dict) -> str:
         if e["note"]:
             desc_parts.append(e["note"])
         if not e["confirmed"]:
-            desc_parts.append(
-                "TENTATIVE - projected from prior years. "
-                "Confirm against the jamaat announcement."
-            )
+            desc_parts.append(DATE_CAVEAT)
+        if e["source"] == "generated":
+            desc_parts.append(TIMING_CAVEAT)
         desc_parts.append(f"source: {e['source']}")
 
         lines += ["BEGIN:VEVENT", f"UID:{e['uid']}", f"DTSTAMP:{stamp}"]
@@ -157,7 +167,9 @@ def render(events: list[dict], cfg: dict) -> str:
         if e["location"]:
             lines.append(fold(f"LOCATION:{esc(e['location'])}"))
         lines += [
-            "STATUS:" + ("CONFIRMED" if e["confirmed"] else "TENTATIVE"),
+            # Always CONFIRMED: this is whether the program happens, not whether
+            # a member is attending and not how sure we are of the time.
+            "STATUS:CONFIRMED",
             "TRANSP:TRANSPARENT",
             "END:VEVENT",
         ]
@@ -194,10 +206,10 @@ def main() -> None:
     if b"\r\r\n" in written or written.count(b"\n") != written.count(b"\r\n"):
         raise SystemExit(f"{out} has malformed line endings; RFC 5545 requires CRLF")
 
-    tentative = sum(1 for e in events if not e["confirmed"])
+    unverified = sum(1 for e in events if e["source"] == "generated")
     print(f"{len(events)} events, {start}H-{start + args.years - 1}H -> {out}")
-    if tentative:
-        print(f"{tentative} marked TENTATIVE (awaiting announcement confirmation)")
+    if unverified:
+        print(f"{unverified} carry generated timings (run sweep.py to confirm them)")
 
 
 if __name__ == "__main__":

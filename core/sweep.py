@@ -53,7 +53,7 @@ from typing import Literal
 import anthropic
 from pydantic import BaseModel
 
-from generate import load, uid
+from generate import DATE_CAVEAT, TIMING_CAVEAT, load, uid
 from misri import MONTHS, from_gregorian, to_gregorian
 
 CATALOG = Path(__file__).parent / "catalog.yaml"
@@ -443,15 +443,25 @@ def already_swept(description: str, mail_date: date) -> bool:
     return bool(match) and date.fromisoformat(match.group(1)) >= mail_date
 
 
+# Lines generate.py or a previous sweep wrote. Everything else in a description
+# was put there by a human and must survive. The first two are legacy: events
+# imported before the caveats moved out of STATUS still carry them.
+MANAGED_PREFIXES = (
+    "source:",
+    "NEEDS REVIEW",
+    "TENTATIVE -",
+    "Confirm against",
+    TIMING_CAVEAT,
+    DATE_CAVEAT.split(".")[0],
+)
+
+
 def rebuild_description(existing: str, *, source: str, review: str | None) -> str:
     """Keep the human-written lines; replace the machine-managed ones."""
     keep = [
         line
         for line in (existing or "").split("\n")
-        if not line.startswith("source:")
-        and not line.startswith("NEEDS REVIEW")
-        and not line.startswith("TENTATIVE -")
-        and not line.startswith("Confirm against")
+        if not line.startswith(MANAGED_PREFIXES)
     ]
     while keep and not keep[-1].strip():
         keep.pop()

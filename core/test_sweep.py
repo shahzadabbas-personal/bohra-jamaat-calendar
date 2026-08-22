@@ -122,6 +122,8 @@ def test_idempotency():
         "Niyaz jaman then waaz.\n"
         "TENTATIVE - projected from prior years.\n"
         "Confirm against the jamaat announcement.\n"
+        "Date varies by year and is projected from prior years. Verify it.\n"
+        "Timing not yet confirmed against the jamaat announcement.\n"
         "source: generated"
     )
     promoted = rebuild_description(original, source="announcement 2026-08-02", review=None)
