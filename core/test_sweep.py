@@ -27,6 +27,7 @@ import sweep
 from generate import uid as generate_uid
 from sweep import (
     hijri_for,
+    merge_day,
     Occurrence,
     Resolved,
     SweepError,
@@ -262,6 +263,62 @@ def test_correction_wins(cfg, ids, catalog):
     eq("order independent", plan([late, early], cfg, catalog)[0].start_time, "20:15")
 
 
+def test_followups(cfg, ids, catalog):
+    """A follow-up about an already-announced miqaat must not lose the time.
+
+    ABNJ sends these routinely: a waaz announcement, then a second mail adding
+    detail ("Kalemaat nooraniyah on Milad un Nabi") that often does not restate
+    the time at all.
+    """
+    def mail(day, kind="per-miqaat"):
+        return {"date": date(2026, 8, day), "kind": kind, "subject": "s"}
+
+    def occ(**kw):
+        return occurrence(miqaat_id="milad-un-nabi", hijri_year=None, hijri_month=None,
+                          hijri_day=None, gregorian_date="2026-08-23", **kw)
+
+    when = date(2026, 8, 23)
+    announced = Resolved(occ=occ(start_time="18:45"), mail=mail(17), when=when)
+
+    # 1. Detail-only follow-up, no time stated. The announced time must survive.
+    detail = Resolved(occ=occ(start_time=None, evidence="watch the video"),
+                      mail=mail(20), when=when)
+    merged = merge_day([announced, detail])
+    eq("follow-up keeps announced time", merged.start_time, "18:45")
+    eq("follow-up has no conflict", merged.conflict, None)
+    eq("stamp tracks newest mail", merged.mail_date, date(2026, 8, 20))
+    action = plan([announced, detail], cfg, catalog)[0]
+    eq("detail follow-up still promotes", action.verb, "promote")
+    eq("promote carries announced time", action.start_time, "18:45")
+
+    # 2. Labelled correction with a new time. Later wins, silently, by design.
+    corrected = Resolved(occ=occ(start_time="20:15"), mail=mail(20, "correction"), when=when)
+    merged = merge_day([announced, corrected])
+    eq("correction changes the time", merged.start_time, "20:15")
+    eq("correction is not a conflict", merged.conflict, None)
+    eq("correction promotes", plan([announced, corrected], cfg, catalog)[0].verb, "promote")
+
+    # 3. Unlabelled second time. Could be a time change or a separate session --
+    #    do not guess between them.
+    other = Resolved(occ=occ(start_time="16:30"), mail=mail(20), when=when)
+    eq("unlabelled disagreement flags", bool(merge_day([announced, other]).conflict), True)
+    conflicted = plan([announced, other], cfg, catalog)[0]
+    eq("conflict becomes review", conflicted.verb, "review")
+    eq("conflict names both times",
+       "18:45" in conflicted.reason and "16:30" in conflicted.reason, True)
+
+    # 4. Same time restated. Not a conflict.
+    echo = Resolved(occ=occ(start_time="18:45"), mail=mail(20), when=when)
+    eq("restating the time is fine", merge_day([announced, echo]).conflict, None)
+
+    # 5. Merge order must not matter.
+    eq("merge is order independent", merge_day([detail, announced]).start_time, "18:45")
+
+    # 6. A later venue refines an earlier one.
+    moved = Resolved(occ=occ(start_time=None, venue="Community Hall"), mail=mail(21), when=when)
+    eq("later venue wins", merge_day([announced, moved]).venue, "Community Hall")
+
+
 def test_ambiguous_never_promotes(cfg, ids, catalog):
     flagged = resolve(occurrence(confidence="low"), MAIL, ids)
     actions = plan([flagged], cfg, catalog)
@@ -481,6 +538,7 @@ def self_test() -> None:
     test_kabisa()
     test_ayyam_fanout(cfg, ids, catalog)
     test_correction_wins(cfg, ids, catalog)
+    test_followups(cfg, ids, catalog)
     test_ambiguous_never_promotes(cfg, ids, catalog)
     test_uid_matches_generate(cfg, ids, catalog)
     test_timing(cfg)

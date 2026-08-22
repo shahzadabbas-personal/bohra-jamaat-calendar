@@ -507,7 +507,59 @@ def observance_offset(cfg: dict, miqaat_id: str) -> int:
     return entry.get("observed_offset", defaults.get("observed_offset", 0))
 
 
-def hijri_for(occ: Occurrence, when: date, cfg: dict, miqaat_id: str) -> tuple[int, int]:
+@dataclass
+class Merged:
+    """Everything several mails said about one miqaat on one day.
+
+    Follow-ups are usually additive: a mail headed "Kalemaat nooraniyah on Milad
+    un Nabi" adds detail to a program already announced, and often does not
+    restate the time. Replacing the earlier record wholesale would drop the
+    announced time and silently fall back to the config default, so fields are
+    merged one at a time and a later null never erases an earlier value.
+    """
+
+    when: date
+    start_time: str | None = None
+    venue: str | None = None
+    evidence: str = ""
+    mail_date: date | None = None
+    hijri_year: int | None = None
+    hijri_month: int | None = None
+    conflict: str | None = None
+
+
+def merge_day(entries: list[Resolved]) -> Merged:
+    """Fold every mail about one day, oldest first, into a single record."""
+    entries = sorted(entries, key=lambda r: r.mail["date"])
+    m = Merged(when=entries[0].when)
+
+    for r in entries:
+        occ = r.occ
+        if occ.start_time:
+            disagrees = m.start_time and occ.start_time != m.start_time
+            if disagrees and r.mail["kind"] != "correction":
+                # Two plain announcements giving different times is not something
+                # to resolve by picking the newer one. It is either a time change
+                # that was not labelled as one, or two separate sessions that both
+                # matched this miqaat. Either way a human should look.
+                m.conflict = (
+                    f"{m.start_time} announced {m.mail_date}, "
+                    f"{occ.start_time} announced {r.mail['date']}, "
+                    f"neither marked a correction"
+                )
+            m.start_time = occ.start_time
+        if occ.venue:
+            m.venue = occ.venue
+        if occ.evidence:
+            m.evidence = occ.evidence
+        if occ.hijri_year and occ.hijri_month:
+            m.hijri_year, m.hijri_month = occ.hijri_year, occ.hijri_month
+        # The stamp tracks the newest mail, so a re-sweep skips what it has read.
+        m.mail_date = r.mail["date"]
+    return m
+
+
+def hijri_for(occ, when: date, cfg: dict, miqaat_id: str) -> tuple[int, int]:
     """The Hijri year and month generate.py used when it built this event's UID.
 
     Prefer what the mail states. Plenty of announcements give only a Gregorian
@@ -550,19 +602,29 @@ def plan(resolutions: list[Resolved], cfg: dict, catalog: dict) -> list[Action]:
         groups.setdefault((r.occ.miqaat_id, r.when.year), []).append(r)
 
     for (miqaat_id, _), members in groups.items():
-        members.sort(key=lambda r: r.when)
-        seen: dict[date, Resolved] = {}
+        by_day: dict[date, list[Resolved]] = {}
         for r in members:
-            # Later mail wins for the same day, so a correction beats the
-            # confirmation it corrects. Compare mail dates rather than trusting
-            # the order these arrived in.
-            prior = seen.get(r.when)
-            if prior is None or r.mail["date"] >= prior.mail["date"]:
-                seen[r.when] = r
+            by_day.setdefault(r.when, []).append(r)
+        seen = {when: merge_day(entries) for when, entries in by_day.items()}
+
         days = sorted(seen)
         for index, when in enumerate(days):
             r = seen[when]
-            hy, hm = hijri_for(r.occ, when, cfg, miqaat_id)
+            if r.conflict:
+                actions.append(
+                    Action(
+                        verb="review",
+                        miqaat_id=miqaat_id,
+                        when=when,
+                        event_uid="",
+                        start_time=None,
+                        reason=f"conflicting times: {r.conflict}",
+                        evidence=r.evidence,
+                        mail_date=r.mail_date,
+                    )
+                )
+                continue
+            hy, hm = hijri_for(r, when, cfg, miqaat_id)
             # A monthly majlis is keyed by Hijri month. Anything else is keyed by
             # its position in the ayyam: day one is the event generate.py already
             # emitted, later days are genuinely new.
@@ -573,9 +635,9 @@ def plan(resolutions: list[Resolved], cfg: dict, catalog: dict) -> list[Action]:
                     miqaat_id=miqaat_id,
                     when=when,
                     event_uid=uid(jid, miqaat_id, hy, seq),
-                    start_time=r.occ.start_time,
-                    evidence=r.occ.evidence,
-                    mail_date=r.mail["date"],
+                    start_time=r.start_time,
+                    evidence=r.evidence,
+                    mail_date=r.mail_date,
                     seq=seq,
                     day=index + 1,
                     of_days=len(days),
