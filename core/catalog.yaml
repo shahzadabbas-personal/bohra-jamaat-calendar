@@ -121,6 +121,15 @@ miqaats:
     day: 27
     category: majlis
 
+  - id: ayyam-ul-beez
+    name: Ayyam ul Beez - Salatuz Zawaal
+    month: 7
+    day_range: [13, 15]
+    category: majlis
+    note: >-
+      The white days. ABNJ announced these for Rajab only, so the entry is
+      scoped to Rajab rather than to every month.
+
   # --- Shabaan ul Kareem (8) ---
   - id: urus-hurratul-maleka
     name: Urus - Maulatena Hurratul Maleka (RA)
@@ -170,6 +179,25 @@ miqaats:
     month: 9
     day: 21
     category: majlis
+
+  - id: aakhri-jumoa
+    name: Aakhri Jumoa
+    month: 9
+    weekday: friday
+    which: last
+    category: majlis
+    note: >-
+      The last Friday of Shehrullah, so the Hijri day moves each year. In 1447H
+      it fell on 25mi.
+
+  - id: lailatus-salaseen
+    name: Lailatus Salaseen - Ahya ul Lail
+    month: 9
+    day: 30
+    category: majlis
+    note: >-
+      The aakhri raat of Shehrullah. Held the evening before, so jamaats set
+      observed_offset -1.
 
   - id: lailatul-qadr
     name: Lailatul Qadr

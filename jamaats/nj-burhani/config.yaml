@@ -141,6 +141,32 @@ observes:
     observed_offset: 0
     confirmed: false
 
+  # Added from the 400-day announcement inventory. Dates are read from how the
+  # mail worded them, so they stay unconfirmed until a sweep verifies each one.
+  - id: lailatul-meraj
+    observed_offset: -1
+    confirmed: false
+
+  - id: shab-e-barat
+    observed_offset: -1
+    confirmed: false
+
+  - id: ayyam-ul-beez
+    observed_offset: 0
+    start_time: "12:00"        # Salatuz Zawaal is prayed at zawaal
+    duration_minutes: 60
+    confirmed: false
+
+  - id: aakhri-jumoa
+    observed_offset: 0
+    confirmed: false
+
+  - id: lailatus-salaseen
+    observed_offset: -1
+    start_time: "20:00"
+    duration_minutes: 300      # ahya ul lail runs late
+    confirmed: false
+
   - id: shehrullah
     observed_offset: 0
     duration_minutes: 0        # all-day banner over the month

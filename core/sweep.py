@@ -129,6 +129,14 @@ email announces many programs; return all of them. A multi-day ayyam program \
 miqaat_id but fall on different dates -- return one entry per day, each with \
 that day's own time.
 
+Return NOTHING AT ALL for an email that is not announcing a religious \
+programme. Social gatherings, fundraisers, sales, food or packet distribution, \
+registration drives, classes and courses, health screenings, travel and safar \
+information, surveys, construction and building notices, election reminders and \
+administrative announcements are not miqaats. For those, return an empty list -- \
+not an entry with a null miqaat_id. An empty list is the correct and expected \
+answer for most of the mail you will see.
+
 miqaat_id must be chosen from the catalog list given below, or be null. Match on \
 meaning, not on string similarity: "Milad un Nabi (SAW) ni waaz" and "Milad \
 Mubarak of Rasulullah" are both milad-un-nabi. If the program is not clearly one \

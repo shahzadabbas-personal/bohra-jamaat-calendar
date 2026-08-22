@@ -18,7 +18,7 @@ from pathlib import Path
 
 import yaml
 
-from misri import MONTHS, MisriDate, from_gregorian, to_gregorian
+from misri import MONTHS, MisriDate, from_gregorian, month_length, to_gregorian
 
 CATALOG = Path(__file__).parent / "catalog.yaml"
 
@@ -69,6 +69,33 @@ def uid(jamaat_id: str, miqaat_id: str, hy: int, seq: int = 0) -> str:
     return f"{digest}@bohra-miqaat-calendar"
 
 
+WEEKDAYS = {
+    "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
+    "friday": 4, "saturday": 5, "sunday": 6,
+}
+
+
+def days_in(spec: dict, hy: int, month: int) -> list[int]:
+    """Which Hijri days of this month the entry falls on.
+
+    Most entries are a single fixed day. `day_range` spans several. `weekday`
+    anchors to a weekday instead -- Aakhri Jumoa is the last Friday of
+    Shehrullah, which lands on a different Hijri day every year.
+    """
+    if spec.get("weekday"):
+        target = WEEKDAYS[spec["weekday"].lower()]
+        matches = [
+            d for d in range(1, month_length(hy, month) + 1)
+            if to_gregorian(hy, month, d).weekday() == target
+        ]
+        which = spec.get("which", "last")
+        return [matches[-1]] if which == "last" else [matches[0]]
+    if spec.get("day_range"):
+        first, last = spec["day_range"]
+        return list(range(first, last + 1))
+    return [spec["day"]]
+
+
 def expand(cfg: dict, catalog: dict, start_year: int, years: int) -> list[dict]:
     by_id = {m["id"]: m for m in catalog["miqaats"]}
     defaults = cfg.get("defaults", {})
@@ -92,11 +119,6 @@ def expand(cfg: dict, catalog: dict, start_year: int, years: int) -> list[dict]:
         note = entry.get("note") or spec.get("note") or ""
 
         monthly = spec.get("recurrence") == "monthly"
-        # `day_range: [first, last]` emits one event per Hijri day in the range.
-        # Ashara needs it: eight waaz and eight majlis on 2mi-9mi are sixteen
-        # separate programs with their own times, not one block.
-        first, last = spec.get("day_range", (spec.get("day"), spec.get("day")))
-
         # A monthly majlis can still skip a month: Shehrullah has its own
         # nightly programme, so there is no 16mi raat darees during it.
         skip = set(spec.get("skip_months", []))
@@ -106,7 +128,7 @@ def expand(cfg: dict, catalog: dict, start_year: int, years: int) -> list[dict]:
             for month in months:
                 if month in skip:
                     continue
-                for day in range(first, last + 1):
+                for day in days_in(spec, hy, month):
                     canonical = MisriDate(hy, month, day)
                     observed = canonical.gregorian + timedelta(days=offset)
                     span = spec.get("duration_days", 1)

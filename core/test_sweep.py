@@ -24,7 +24,7 @@ from pathlib import Path
 from googleapiclient.errors import HttpError
 
 import sweep
-from generate import uid as generate_uid
+from generate import days_in, uid as generate_uid
 from sweep import (
     hijri_for,
     merge_day,
@@ -420,6 +420,31 @@ def test_day_range_uids(cfg, ids, catalog):
        plan([Resolved(occ=bare, mail=MAIL, when=date(2026, 6, 17))], cfg, catalog)[0].seq, 3)
 
 
+def test_generate_day_selection(catalog):
+    """generate.py decides which Hijri days an entry falls on; sweep mirrors it.
+
+    These live beside the sweep tests because the two must agree: a day the
+    generator emits and the sweep does not expect becomes a duplicate event.
+    """
+    by_id = {m["id"]: m for m in catalog["miqaats"]}
+
+    eq("single day", days_in(by_id["chehlum"], 1448, 2), [20])
+    eq("day_range spans", days_in(by_id["ashara-waaz"], 1448, 1), list(range(2, 10)))
+    eq("ayyam ul beez", days_in(by_id["ayyam-ul-beez"], 1448, 7), [13, 14, 15])
+
+    # Aakhri Jumoa is the last Friday of Shehrullah, a different Hijri day each
+    # year, and it must actually be a Friday.
+    for hy, expected in ((1447, 25), (1448, 28)):
+        got = days_in(by_id["aakhri-jumoa"], hy, 9)
+        eq(f"aakhri jumoa {hy}H", got, [expected])
+        eq(f"aakhri jumoa {hy}H is a friday",
+           sweep.to_gregorian(hy, 9, got[0]).weekday(), 4)
+        # and it is the last one, not merely a Friday
+        later = [d for d in range(got[0] + 1, 31)
+                 if sweep.to_gregorian(hy, 9, d).weekday() == 4]
+        eq(f"aakhri jumoa {hy}H is the last friday", later, [])
+
+
 def test_timing(cfg):
     eq("per-entry start time", timing(cfg, "milad-un-nabi")[0], "18:45")
     eq("falls back to default", timing(cfg, "urus-fakhruddin-shaheed")[0], "19:00")
@@ -586,6 +611,7 @@ def self_test() -> None:
     test_ambiguous_never_promotes(cfg, ids, catalog)
     test_uid_matches_generate(cfg, ids, catalog)
     test_day_range_uids(cfg, ids, catalog)
+    test_generate_day_selection(catalog)
     test_timing(cfg)
     test_backoff()
     test_body_extraction()
