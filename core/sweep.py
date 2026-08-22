@@ -247,14 +247,23 @@ def fetch(gmail, cfg: dict, since: date) -> list[dict]:
     after = since.strftime("%Y/%m/%d")
     query = "from:(" + " OR ".join(senders) + f") after:{after}"
 
-    listed = with_backoff(
-        lambda: gmail.users()
-        .messages()
-        .list(userId="me", q=query, maxResults=200)
-        .execute(),
-        what="gmail list",
-    )
-    ids = [m["id"] for m in listed.get("messages", [])]
+    # Gmail pages at 500. A week's sweep never fills one page, but an inventory
+    # run over a year does, and stopping at the first page would silently drop
+    # the oldest mail -- the same failure as reading an empty result as quiet.
+    ids: list[str] = []
+    page_token = None
+    while True:
+        listed = with_backoff(
+            lambda t=page_token: gmail.users()
+            .messages()
+            .list(userId="me", q=query, maxResults=500, pageToken=t)
+            .execute(),
+            what="gmail list",
+        )
+        ids += [m["id"] for m in listed.get("messages", [])]
+        page_token = listed.get("nextPageToken")
+        if not page_token:
+            break
 
     if not ids:
         control = with_backoff(

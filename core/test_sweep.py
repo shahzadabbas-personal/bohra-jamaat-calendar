@@ -478,9 +478,15 @@ class FakeGmail:
     def messages(self):
         return self
 
-    def list(self, userId, q, maxResults):
+    def list(self, userId, q, maxResults, pageToken=None):
         hits = self.matched if "from:" in q else self.mailbox
-        return _Executable({"messages": [{"id": i} for i in hits]})
+        # Serve one id per page so a single-page reader is caught immediately.
+        start = int(pageToken or 0)
+        page = hits[start:start + 1]
+        body = {"messages": [{"id": i} for i in page]}
+        if start + 1 < len(hits):
+            body["nextPageToken"] = str(start + 1)
+        return _Executable(body)
 
     def get(self, userId, id, format):
         subject, stamp = self.SUBJECTS[id]
@@ -508,6 +514,7 @@ def test_fetch(cfg):
     since = date(2026, 7, 20)
 
     mails = fetch(FakeGmail(["m1", "m2", "m3"], ["anything"]), cfg, since)
+    eq("follows every page", len(mails), 2)   # 3 matched, 1 dropped by ignore
     eq("ignore_subjects drops teejia", len(mails), 2)
     eq("kinds routed", [m["kind"] for m in mails], ["roundup", "correction"])
     eq("oldest first", mails[0]["date"] <= mails[1]["date"], True)
