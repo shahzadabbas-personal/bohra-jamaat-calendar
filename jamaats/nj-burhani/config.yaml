@@ -141,6 +141,25 @@ observes:
     observed_offset: 0
     confirmed: false
 
+  - id: shehrullah
+    observed_offset: 0
+    duration_minutes: 0        # all-day banner over the month
+    confirmed: false
+
+  - id: shehrullah-evening
+    observed_offset: 0
+    start_time: "17:00"
+    duration_minutes: 240      # tilawat, maghrib/isha namaz, bayan, then niyaz
+    confirmed: false
+    note: >-
+      1447H ran at 5 PM for the whole month after the schedule was updated.
+      The jamaat announces one timing and revises it as maghrib shifts.
+
+  - id: eid-raat
+    observed_offset: -1
+    start_time: "19:00"
+    confirmed: false
+
   - id: eid-ul-fitr
     observed_offset: 0
     confirmed: false

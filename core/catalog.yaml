@@ -135,11 +135,23 @@ miqaats:
     category: majlis
 
   # --- Shehrullah il Moazzam (9) ---
-  - id: ramadan-start
-    name: Shehrullah il Moazzam begins
+  - id: shehrullah
+    name: Shehrullah il Moazzam
     month: 9
     day: 1
+    duration_days: 30
     category: seasonal
+    note: Month-long banner. Shehrullah is a kamil month, always 30 days.
+
+  - id: shehrullah-evening
+    name: Shehrullah - Evening program
+    month: 9
+    day_range: [1, 30]
+    category: majlis
+    note: >-
+      Tilawat and bayan before maghrib/isha namaz, then niyaz na jaman. The
+      jamaat announces one timing for the whole month and revises it as maghrib
+      shifts, so this is one repeated programme rather than thirty distinct ones.
 
   - id: matam-majlis-ramadan
     name: Matam ni Majlis - 11mi raat Shehrullah
@@ -171,6 +183,15 @@ miqaats:
     month: 10
     day: 1
     category: eid
+
+  - id: eid-raat
+    name: Eid ul Fitr - Raat
+    month: 10
+    day: 1
+    category: eid
+    note: >-
+      Held the evening before Eid, so jamaats set observed_offset -1. Separate
+      from the Eid namaz on the day itself.
 
   - id: urus-abdul-qadir-hakimuddin
     name: Urus - Syedi Abdul Qadir Hakimuddin (AQ)
