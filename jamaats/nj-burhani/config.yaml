@@ -159,10 +159,19 @@ observes:
     observed_offset: -1
     start_time: "19:00"
     confirmed: false
+    note: >-
+      A separate programme from the Eid day itself. 19:00 is a placeholder until
+      an announcement supplies the real time.
 
   - id: eid-ul-fitr
     observed_offset: 0
+    start_time: "05:00"
+    duration_minutes: 240      # through fajr, Eid namaz after sunrise, then waaz
     confirmed: false
+    note: >-
+      The programme begins before fajr. 05:00 clears fajr for Eid in 1448H-1450H,
+      when it falls in Feb/March; Eid moves about eleven days earlier each year,
+      so revisit this as fajr shifts. The jamaat announces the exact time.
 
   - id: urus-abdul-qadir-hakimuddin
     observed_offset: -1
