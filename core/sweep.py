@@ -69,7 +69,26 @@ SCOPES = [
 # retrying a bad credential just burns time and looks like a hang.
 RETRY_STATUS = frozenset({429, 500, 502, 503, 504})
 
-CORRECTION_PREFIXES = ("time change", "correction-", "correction:", "corrected")
+# ABNJ writes a revision four different ways and often behind a "Re:", so a
+# prefix match on "Time change:" caught none of them in a year of real mail.
+# Matching a phrase anywhere in the subject is what actually works here.
+CORRECTION_PHRASES = (
+    "time change",
+    "timing change",
+    "times change",
+    "change in timing",
+    "change of timing",
+    "new timing",
+    "schedule change",
+    "schedule update",
+    "updated schedule",
+    "revised schedule",
+    "correction",
+    "corrected",
+    "rescheduled",
+)
+
+REPLY_PREFIX = re.compile(r"^\s*((re|fwd|fw)\s*:\s*)+", re.IGNORECASE)
 
 
 class SweepError(Exception):
@@ -317,8 +336,10 @@ def fetch(gmail, cfg: dict, since: date) -> list[dict]:
 
 def classify(subject: str, cfg: dict) -> str:
     """Routing is deterministic; only the extraction needs judgement."""
-    low = subject.lower().strip()
-    if any(low.startswith(p) for p in CORRECTION_PREFIXES):
+    low = REPLY_PREFIX.sub("", subject or "").lower().strip()
+    # A correction outranks a roundup: "Updated Schedule: Shehrullah ... Timings"
+    # is both, and the revised times are the point of it.
+    if any(phrase in low for phrase in CORRECTION_PHRASES):
         return "correction"
     roundup = (cfg["sources"].get("monthly_schedule_subject") or "").lower()
     if roundup and roundup in low:
@@ -742,6 +763,15 @@ def apply(calendar, calendar_id: str, cfg: dict, actions: list[Action], write: b
 
 
 def main() -> None:
+    # Subjects carry narrow no-break spaces and other characters the Windows
+    # console codepage cannot encode. Without this the run dies on printing a
+    # subject, part way through, having already written to the calendar.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("jamaat_dir", type=Path)
     p.add_argument("--since", type=date.fromisoformat, default=None)

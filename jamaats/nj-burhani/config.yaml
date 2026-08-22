@@ -29,6 +29,13 @@ sources:
     - sipara
     - FMB thaali
     - NIAZ RSVP
+    # Funeral notices name the deceased in the subject line. They are never
+    # miqaats, and the less of this mail the sweep handles at all, the better.
+    - Inna lilahe
+    - passed away
+    # The daily Ashara countdown ran to 66 mails in one year and announces
+    # nothing datable. Dropping it is most of the sweep's running cost.
+    - Days left
 
 defaults:
   observed_offset: -1
