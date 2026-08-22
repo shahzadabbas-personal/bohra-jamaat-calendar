@@ -109,11 +109,27 @@ entries carry hand-set defaults that no sweep will ever correct.
    expiry. It requires a home page, privacy policy and terms of service on a
    domain verified in Google Search Console.
 
-   The lever is the `miqaat` repo, not this one. `shahzadabbas-personal.github.io/miqaat/`
-   is already public, already has Pages enabled, and holds nothing but links to a
-   calendar that is public anyway. Two more static pages there, plus verifying
-   that domain in Search Console, satisfies Google without exposing the sweep,
-   the jamaat config or the catalog.
+   Hosting is the obstacle, and probably a real one. Google's verification
+   requirements say the homepage "must be on a verified domain you own", and that
+   a project owner "must verify ownership of the authorized domain using Google
+   Search Console". Nobody owns `github.io`; you control a subdomain of it, and
+   `github.io` is a public suffix. Search Console will verify a URL-prefix
+   property such as `https://shahzadabbas-personal.github.io/miqaat/` by HTML file
+   upload, which Pages makes easy, but the Authorized domains field takes a
+   domain rather than a URL prefix. Whether Google accepts a github.io subdomain
+   there is untested.
+
+   Try it that way first, since the `miqaat` repo is already public with Pages
+   enabled and costs nothing. If Google refuses the domain, a registered domain
+   at roughly fifteen dollars a year settles it outright: full DNS control, a
+   Search Console domain property, and no argument about ownership. Either route
+   keeps this repo private.
+
+   One more distinction nobody has resolved: the wording above states the
+   requirements for *verification*. Publishing an unverified personal-use app
+   requires the three App domain links to exist, but no documentation found so far
+   says whether the domain must also be Search Console verified merely to publish.
+   Those may be different bars.
 
    If this repo ever does go public, rewrite history first. The jamaat's list
    address sits in the initial commit; scrubbing it from the file later left the
