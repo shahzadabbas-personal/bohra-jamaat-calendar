@@ -106,8 +106,30 @@ the range you generated.
 
 ## Running it on a schedule
 
-`tools/run_sweep.py` is a runner for Windows Task Scheduler. It launches under
-`pythonw.exe`, so no console window appears, and writes to `logs/`.
+`tools/run_sweep.py` runs the sweep and writes to `logs/` instead of stdout,
+since a scheduler gives it nowhere to print. Nothing in it is platform specific.
+
+On **Windows**, point Task Scheduler at `pythonw.exe`, which allocates no console
+and so cannot flash a window:
+
+```
+Program:    <your env>\Scripts\pythonw.exe
+Arguments:  "<repo>\tools\run_sweep.py"
+Start in:   <repo>
+```
+
+On **macOS or Linux**, a cron line does the same job. Cron starts with almost no
+environment, so set the key in the crontab itself rather than relying on your
+shell profile:
+
+```cron
+ANTHROPIC_API_KEY=sk-ant-...
+0 9 * * * cd /path/to/bohra-jamaat-calendar && /usr/bin/python3 tools/run_sweep.py
+```
+
+That missing environment is the usual reason a scheduled run fails while the same
+command works by hand. The runner checks for the key first and says so in the log
+rather than failing somewhere less obvious.
 
 Schedule it daily rather than weekly. While the OAuth app sits in Testing, Google
 expires the authorisation seven days after consent rather than seven days after

@@ -1,10 +1,13 @@
 """Runner for the scheduled sweep.
 
-Task Scheduler launches this with pythonw.exe, which allocates no console, so
-nothing flashes on screen. That also means there is nowhere for output to go, so
-everything is redirected to logs/sweep-<year>-<month>.log.
+It writes everything to logs/sweep-<year>-<month>.log rather than to stdout,
+because a scheduler gives it nowhere to print.
 
-    pythonw.exe tools/run_sweep.py
+    pythonw.exe tools/run_sweep.py     Windows, via Task Scheduler
+    python3 tools/run_sweep.py         macOS or Linux, via cron
+
+On Windows, pythonw.exe allocates no console, so nothing flashes on screen. On
+cron there is no console to begin with. Nothing here is platform specific.
 
 Read the log after a scheduled run. The Google authorisation expires seven days
 after consent while the OAuth app is in Testing, and when it does this exits
@@ -41,9 +44,11 @@ def main() -> int:
 
         if not os.environ.get("ANTHROPIC_API_KEY"):
             log.write(
-                "ANTHROPIC_API_KEY is not set for the scheduled task. Set it with\n"
-                "  setx ANTHROPIC_API_KEY \"sk-ant-...\"\n"
-                "then let the task run again.\n"
+                "ANTHROPIC_API_KEY is not set for the scheduled run.\n"
+                "A scheduler starts with almost no environment, so setting it\n"
+                "in your shell is not enough:\n"
+                "  Windows      setx ANTHROPIC_API_KEY \"sk-ant-...\"\n"
+                "  cron         put ANTHROPIC_API_KEY=sk-ant-... in the crontab\n"
             )
             return 2
 
