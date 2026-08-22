@@ -103,20 +103,42 @@ entries carry hand-set defaults that no sweep will ever correct.
 
 ## Next steps
 
-1. Kabisa set: deferred, see the decision above. Cap generation at `--years 1`
-   until the Moharram 1449H announcement lands, roughly May 2027.
-2. Reconcile `core/catalog.yaml` against the printed calendar — the catalog was
-   derived from ~14 months of email, so anything ABNJ observes but didn't email
-   about in that window is missing.
-3. Re-import the `.ics` after regenerating, then sweep, in that order. Importing
-   resets an event's description, so a sweep afterwards restores the
-   announcement stamps it overwrote.
-4. Decide whether the calendar is ready to share. Most events still carry
-   generated timings, and a member reading one cannot tell a confirmed time from
-   a default without opening the description.
-5. Watch the first multi-day ayyam the sweep meets. Tests cover the fan-out, but
-   it has never run against a real announcement; the Burhanuddin urus is the
-   next chance.
+1. **Publish the OAuth app so the authorisation stops expiring.** While the app
+   sits in Testing, Google expires it seven days after consent, and the daily
+   sweep fails until someone re-approves in a browser. Publishing removes that
+   expiry. It requires a home page, privacy policy and terms of service on a
+   domain verified in Google Search Console.
+
+   The lever is the `miqaat` repo, not this one. `shahzadabbas-personal.github.io/miqaat/`
+   is already public, already has Pages enabled, and holds nothing but links to a
+   calendar that is public anyway. Two more static pages there, plus verifying
+   that domain in Search Console, satisfies Google without exposing the sweep,
+   the jamaat config or the catalog.
+
+   If this repo ever does go public, rewrite history first. The jamaat's list
+   address sits in the initial commit; scrubbing it from the file later left the
+   past untouched. `git log -S` against that address will find the commit.
+
+   One thing nobody has established either way: Google documents the personal-use
+   exemption for fewer than 100 users, but never says whether it covers
+   *restricted* scopes, and `gmail.readonly` is restricted. Google may simply
+   refuse. Publishing status reverts, so trying it costs little.
+
+2. **Ashara and Eid timings will never self-correct.** ABNJ announces neither, so
+   those entries carry hand-set defaults. The Ashara raat majlis sits at 19:30,
+   which approximates an hour before maghrib only while Ashara falls in June, and
+   Ashara moves about eleven days earlier every year. Eid starts at 05:00 to clear
+   fajr, which holds while Eid falls in February or March. Both need revisiting as
+   they drift.
+
+3. **The GitHub Actions workflow does nothing useful.** Its verify steps run and
+   pass; the sweep step is a stubbed echo, and it could not authenticate
+   unattended in any case. Either wire it to something real or drop the cron
+   trigger and leave it on `workflow_dispatch`.
+
+4. **Generation stops at one year by choice, not by doubt.** The kabisa set holds
+   through 1450H against 642 independent date pairs, so `--years 3` is available
+   whenever a longer horizon justifies the re-import.
 
 ## How the sweep behaves
 
