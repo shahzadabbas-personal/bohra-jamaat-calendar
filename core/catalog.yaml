@@ -238,6 +238,7 @@ miqaats:
     name: 16mi raat Darees ni Majlis
     recurrence: monthly
     day: 16
+    skip_months: [9]           # Shehrullah has its own nightly programme
     category: majlis
     note: >-
       Held on the niyyat of Syedna Hatim Mohiyuddin (RA), Syedna Taher

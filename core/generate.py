@@ -97,9 +97,15 @@ def expand(cfg: dict, catalog: dict, start_year: int, years: int) -> list[dict]:
         # separate programs with their own times, not one block.
         first, last = spec.get("day_range", (spec.get("day"), spec.get("day")))
 
+        # A monthly majlis can still skip a month: Shehrullah has its own
+        # nightly programme, so there is no 16mi raat darees during it.
+        skip = set(spec.get("skip_months", []))
+
         for hy in range(start_year, start_year + years):
             months = range(1, 13) if monthly else [spec["month"]]
             for month in months:
+                if month in skip:
+                    continue
                 for day in range(first, last + 1):
                     canonical = MisriDate(hy, month, day)
                     observed = canonical.gregorian + timedelta(days=offset)
