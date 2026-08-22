@@ -148,7 +148,9 @@ implementation is wrong.
 
 ## Source details
 
-- Announcements: `info@anjuman-e-burhani.org` → `[jamaat list address removed]`
+- Announcements come from `info@anjuman-e-burhani.org` to the jamaat list. The
+  list address stays out of this file on purpose: git tracks HANDOFF.md, and the
+  repo's own rule forbids committing mailing list addresses.
 - Monthly roundup subject pattern: `<Month> <Year>H Miqaat Monthly Schedule`,
   explicitly marked tentative, with per-miqaat confirmations following
 - Body format gives both Hijri and Gregorian dates plus maghrib time, so the
