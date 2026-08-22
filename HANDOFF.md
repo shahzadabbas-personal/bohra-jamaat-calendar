@@ -8,8 +8,8 @@ open questions, not a transcript.
 A shareable Google Calendar of Dawoodi Bohra miqaat dates for Anjuman-e-Burhani
 NJ, built so any jamaat can fork it and swap in their own schedule.
 
-Scaffold is done and tested. `core/sweep.py` is written and its logic is
-tested, but its extraction call has never run against real mail.
+Scaffold and sweep are both done. `core/sweep.py` has run against a year of real
+announcements and has written to the live calendar.
 
 ## Decisions already made (and why)
 
@@ -73,16 +73,28 @@ The printed 1448H taqweem does not settle this. 1448H is already an anchor, and
 every competing variant agrees on it. Settling the cycle needs a trusted
 Gregorian date for 1 Moharram 1449H or later.
 
-`core/sweep.py` has no self-test of its own. Development tests covered its pure
-logic in roughly 45 assertions: idempotency stamps, the Hijri/Gregorian
-cross-check, all five ambiguity gates, ayyam fan-out, correction ordering, and
-Gmail backoff. One of them anchors on a `VERIFIED_ANCHORS` pair. Those tests were
-scratch and nobody committed them.
+`core/test_sweep.py` covers the sweep's pure logic in 94 assertions: idempotency
+stamps, the Hijri/Gregorian cross-check, all five ambiguity gates, ayyam fan-out,
+correction ordering, the UID rules generate.py and sweep.py must agree on, and
+Gmail backoff. Several anchor on `VERIFIED_ANCHORS` pairs. It runs in CI beside
+the misri anchors.
 
-**Unrun: the extraction call.** No real announcement has gone through
-`claude-opus-5` yet. The prompt, the schema and the SDK call shape all check out;
-what they return on ABNJ's actual mail is still unknown. Sweep a week in dry run
-and read every line before trusting `--apply`.
+**The extraction has now run against real mail.** 174 announcements spanning 400
+days, no errors, 106 occurrences. It correctly returned nothing for 92 of them.
+Reading that output found five miqaats the calendar was missing and a handful of
+social announcements the prompt should have excluded, both since fixed.
+
+**Still unproven: the kabisa set past 1450H.** The mumineen.org feed agrees with
+misri.py on all 642 of its Hijri/Gregorian pairs across 1448H-1450H, and its
+1 Moharram dates give 1448H 355 days and 1449H 354, which matches. That settles
+remainders 8 and 9 and supports the Fatimid variant over the common tabular one,
+which marks 7 rather than 8. The other eight positions in the cycle are untested,
+so generation is safe to 1450H and speculative after it.
+
+**Ashara and Eid timings come from the jamaat, not from mail.** A year of
+announcements contains no Ashara timing mail at all -- the Ashara week itself is
+nearly silent -- and the only Eid mail is the afternoon zohr/asr one. Those
+entries carry hand-set defaults that no sweep will ever correct.
 
 ## Next steps
 
@@ -91,13 +103,15 @@ and read every line before trusting `--apply`.
 2. Reconcile `core/catalog.yaml` against the printed calendar — the catalog was
    derived from ~14 months of email, so anything ABNJ observes but didn't email
    about in that window is missing.
-3. Fill in `calendar_id` in `jamaats/nj-burhani/config.yaml`, and put a Gmail +
-   Calendar OAuth desktop client at `jamaats/nj-burhani/credentials.json`. The
-   sweep refuses to start without both.
-4. Sweep a real week in dry run and read every line before passing `--apply`.
-   The extraction has never seen ABNJ mail.
-5. Commit the sweep's logic tests. They exist only in scratch, so the next edit
-   to `sweep.py` has nothing to break.
+3. Re-import the `.ics` after regenerating, then sweep, in that order. Importing
+   resets an event's description, so a sweep afterwards restores the
+   announcement stamps it overwrote.
+4. Decide whether the calendar is ready to share. Most events still carry
+   generated timings, and a member reading one cannot tell a confirmed time from
+   a default without opening the description.
+5. Watch the first multi-day ayyam the sweep meets. Tests cover the fan-out, but
+   it has never run against a real announcement; the Burhanuddin urus is the
+   next chance.
 
 ## How the sweep behaves
 
