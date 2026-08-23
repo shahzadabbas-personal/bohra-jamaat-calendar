@@ -156,6 +156,37 @@ entries carry hand-set defaults that no sweep will ever correct.
    through 1450H against 642 independent date pairs, so `--years 3` is available
    whenever a longer horizon justifies the re-import.
 
+## Miqaats the inventory found and nobody added
+
+Extracting 400 days of announcements turned up programmes ABNJ holds that
+`catalog.yaml` has no entry for. Five went in: Ayyam ul Beez, Lailatus Salaseen,
+Aakhri Jumoa, and two that were already in the catalog but missing from ABNJ's
+observes list, Lailatul Meraj and Shab-e-Barat.
+
+These did not. They sit here so nobody has to run the inventory again to find
+them, which costs a few dollars and 174 extraction calls.
+
+| What the mail called it | Announced | Hijri as stated |
+|---|---|---|
+| Salgirah mubarak ni raat of Imamuz Zaman (SA) | 25 Sep 2025 | 3mi Rabi ul Akhar |
+| Milad raat mubarak of Syedna Mohammed Burhanuddin | 11-12 Oct 2025 | 19-20mi Rabi ul Akhar |
+| Pehli raat of Rajab ul Asab | 19 Dec 2025 | not stated |
+| Milad ni raat of Amirul Mumineen (AS) | 31 Dec 2025 | 12mi Rajab |
+| Ayyamul Barakatil Khuldiyah, Khatmul Quran majlis | 4-5 Jan 2026 | 16-17mi Rajab |
+| Lailat Urs Mubarak Syedna Taher Saifuddin, waaz | 6 Jan 2026 | 18mi Rajab |
+| Urs Syedna Abdul Qadir Najmuddin (Ujjain) | 14 Jan 2026 | 26mi Rajab |
+| Khatmul Quran ni majlis, Shehrullah | 20-22 Feb 2026 | 4th-6th Shehrullah |
+| Urus raat majlis, Syedna Abdul Husain Husamuddin | 12 Jun 2026 | 27mi Zilhaj |
+
+Read those Hijri dates carefully before trusting them. They are what the mail
+said, and a raat majlis announced as 26mi is usually the eve of 27mi, so the
+canonical date is often one higher. Check each against the taqweem rather than
+converting from the Gregorian column.
+
+Two notes on the catalog while here. It already holds Syedna Taher Saifuddin's
+milad in Zilqad but not his urus in Rajab. And `urus-abdul-qadir-hakimuddin` at
+26mi Shawwal is a different person from Abdul Qadir Najmuddin of Ujjain above.
+
 ## How the sweep behaves
 
 The rules below started as the spec for `sweep.py` and now describe what it
