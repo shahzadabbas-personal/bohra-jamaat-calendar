@@ -131,14 +131,14 @@ That missing environment is the usual reason a scheduled run fails while the sam
 command works by hand. The runner checks for the key first and says so in the log
 rather than failing somewhere less obvious.
 
-Schedule it daily rather than weekly. While the OAuth app sits in Testing, Google
-expires the authorisation seven days after consent rather than seven days after
-last use, so a weekly run lands on that boundary and fails most weeks. A daily
-run turns each re-approval into a week of unattended operation, and puts
-announcements on the calendar within a day of the jamaat sending them.
+Schedule it daily, which puts announcements on the calendar within a day of the
+jamaat sending them. If your OAuth app is still in Testing, daily matters more:
+Google expires the authorisation seven days after consent rather than after last
+use, so a weekly run lands on that boundary and fails most weeks.
 
-When the seven days do run out, the log says so and names the fix: run the sweep
+When the authorisation lapses, the log says so and names the fix: run the sweep
 once in a terminal so a browser can open, approve it, and the schedule resumes.
+The scheduled run never opens a browser itself.
 
 ## Adding your jamaat
 
@@ -186,10 +186,13 @@ approve both permissions. A `token.json` appears next to the credentials.
 Then the sting. While the app's publishing status is Testing, Google expires that
 authorisation **seven days after consent**, no matter how often you use it. The
 sweep will fail on the eighth day and the log says so. Publishing the app removes
-the expiry, but Google requires a home page, privacy policy and terms of service
-on a domain verified in Search Console before an external app can go to
-production. For one person running one jamaat, re-approving weekly is usually the
-smaller cost.
+the expiry, and it is less work than it looks. Google greys out **Publish app**
+until the Branding page has a home page, a privacy policy link and an authorized
+domain. A GitHub Pages site is enough for all three: ABNJ uses its sharing page as
+the home page, a short `privacy.html` beside it, and `<you>.github.io` as the
+domain. Terms of service and Search Console verification were not needed. The
+app then runs unverified, under the 100-user cap, and consent still shows the
+"hasn't verified this app" warning.
 
 ### Extraction
 

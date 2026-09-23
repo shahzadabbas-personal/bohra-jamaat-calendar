@@ -205,7 +205,12 @@ def with_backoff(call, what: str, attempts: int = 5):
 # --- Gmail -------------------------------------------------------------------
 
 
+# Set by tools/run_sweep.py, which runs with no one at the keyboard.
+UNATTENDED = False
+
+
 def google_services(creds_dir: Path):
+    from google.auth.exceptions import RefreshError
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
     from google_auth_oauthlib.flow import InstalledAppFlow
@@ -219,8 +224,15 @@ def google_services(creds_dir: Path):
         creds = Credentials.from_authorized_user_file(str(token), SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+            except RefreshError:
+                # Google revoked the refresh token. Ask for consent again,
+                # unless nobody is there to answer the browser.
+                if UNATTENDED:
+                    raise
+                creds = None
+        if not creds or not creds.valid:
             if not secret.exists():
                 raise SweepError(
                     f"No Google credentials. Put an OAuth desktop client at "

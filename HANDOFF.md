@@ -103,42 +103,19 @@ entries carry hand-set defaults that no sweep will ever correct.
 
 ## Next steps
 
-1. **Publish the OAuth app so the authorisation stops expiring.** While the app
-   sits in Testing, Google expires it seven days after consent, and the daily
-   sweep fails until someone re-approves in a browser. Publishing removes that
-   expiry. It requires a home page, privacy policy and terms of service on a
-   domain verified in Google Search Console.
-
-   Hosting is the obstacle, and probably a real one. Google's verification
-   requirements say the homepage "must be on a verified domain you own", and that
-   a project owner "must verify ownership of the authorized domain using Google
-   Search Console". Nobody owns `github.io`; you control a subdomain of it, and
-   `github.io` is a public suffix. Search Console will verify a URL-prefix
-   property such as `https://shahzadabbas-personal.github.io/miqaat/` by HTML file
-   upload, which Pages makes easy, but the Authorized domains field takes a
-   domain rather than a URL prefix. Whether Google accepts a github.io subdomain
-   there is untested.
-
-   Try it that way first, since the `miqaat` repo is already public with Pages
-   enabled and costs nothing. If Google refuses the domain, a registered domain
-   at roughly fifteen dollars a year settles it outright: full DNS control, a
-   Search Console domain property, and no argument about ownership. Either route
-   keeps this repo private.
-
-   One more distinction nobody has resolved: the wording above states the
-   requirements for *verification*. Publishing an unverified personal-use app
-   requires the three App domain links to exist, but no documentation found so far
-   says whether the domain must also be Search Console verified merely to publish.
-   Those may be different bars.
+1. **Confirm the published OAuth app really stopped expiring.** Published on
+   23 Sep 2026 and re-approved the same day. Google greyed out Publish until the
+   Branding page had a home page, privacy policy and authorized domain; the
+   `miqaat` Pages site covered all three (`privacy.html` added there,
+   `shahzadabbas-personal.github.io` as the domain). No terms of service, no
+   Search Console, no verification submitted. The app runs unverified, 1 of 100
+   users. If the daily sweep still succeeds after 30 Sep 2026, the 7-day expiry
+   is gone; if it lapses, check whether Google treats restricted `gmail.readonly`
+   differently for unverified production apps.
 
    If this repo ever does go public, rewrite history first. The jamaat's list
    address sits in the initial commit; scrubbing it from the file later left the
    past untouched. `git log -S` against that address will find the commit.
-
-   One thing nobody has established either way: Google documents the personal-use
-   exemption for fewer than 100 users, but never says whether it covers
-   *restricted* scopes, and `gmail.readonly` is restricted. Google may simply
-   refuse. Publishing status reverts, so trying it costs little.
 
 2. **Ashara and Eid timings will never self-correct.** ABNJ announces neither, so
    those entries carry hand-set defaults. The Ashara raat majlis sits at 19:30,
