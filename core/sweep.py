@@ -238,6 +238,11 @@ def google_services(creds_dir: Path):
                     f"No Google credentials. Put an OAuth desktop client at "
                     f"{secret} (both it and token.json are gitignored)."
                 )
+            if UNATTENDED:
+                raise SweepError(
+                    "No usable Google authorisation, and a scheduled run cannot "
+                    "open a browser. Run the sweep once in a terminal to approve."
+                )
             creds = InstalledAppFlow.from_client_secrets_file(
                 str(secret), SCOPES
             ).run_local_server(port=0)

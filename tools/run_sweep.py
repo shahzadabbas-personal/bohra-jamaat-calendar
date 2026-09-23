@@ -61,10 +61,14 @@ def main() -> int:
         except Exception as e:
             lapsed = "invalid_grant" in str(e) or "RefreshError" in type(e).__name__
             if lapsed:
+                # pythonw.exe runs the schedule on Windows but has no console.
+                exe = Path(sys.executable)
+                if exe.name.lower() == "pythonw.exe":
+                    exe = exe.with_name("python.exe")
                 log.write(
                     "The Google authorisation has lapsed or been revoked.\n"
                     "Re-approve by running the sweep once in a terminal:\n"
-                    f"  {Path(sys.executable).parent / 'python'} core/sweep.py jamaats/nj-burhani\n"
+                    f'  "{exe}" core/sweep.py jamaats/nj-burhani\n'
                     "A browser opens; approve it and this task resumes on its own.\n"
                 )
             else:
