@@ -18,13 +18,13 @@ from __future__ import annotations
 
 import base64
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from googleapiclient.errors import HttpError
 
 import sweep
-from generate import days_in, uid as generate_uid
+from generate import TIMING_CAVEAT, days_in, uid as generate_uid
 from sweep import (
     find_orphans,
     hijri_for,
@@ -651,6 +651,102 @@ def test_fetch(cfg):
     )
 
 
+class FakeCalendar:
+    """Serves events by iCalUID and records every write apply() makes."""
+
+    def __init__(self, events: dict[str, dict]):
+        self.by_uid, self.patched, self.imported = events, [], []
+
+    def events(self):
+        return self
+
+    def list(self, calendarId, iCalUID, maxResults, showDeleted):
+        found = self.by_uid.get(iCalUID)
+        return _Executable({"items": [found] if found else []})
+
+    def patch(self, calendarId, eventId, body, sendUpdates):
+        self.patched.append(body)
+        return _Executable({})
+
+    def import_(self, calendarId, body):
+        self.imported.append(body)
+        return _Executable({})
+
+
+def test_apply(cfg, catalog):
+    at = datetime(2026, 9, 21, 15, 0)
+
+    def action(miqaat_id, start_time, uid="u1", mail_at=at):
+        return sweep.Action(
+            verb="promote", miqaat_id=miqaat_id, when=date(2026, 9, 26),
+            event_uid=uid, start_time=start_time, mail_date=mail_at.date(),
+            mail_at=mail_at,
+        )
+
+    def run(events, *actions):
+        cal = FakeCalendar(events)
+        counts = sweep.apply(cal, "cal", cfg, catalog, list(actions), write=True)
+        return cal, counts
+
+    timed = {"id": "e1", "start": {"dateTime": "2026-09-26T18:30:00"},
+             "description": f"{TIMING_CAVEAT}\nsource: generated"}
+
+    # An announced time replaces the default and drops the caveat.
+    cal, _ = run({"u1": timed}, action("darees-majlis", "18:50"))
+    body = cal.patched[0]
+    eq("announced time applied", body["start"]["dateTime"], "2026-09-26T18:50:00")
+    eq("announced time drops caveat", TIMING_CAVEAT in body["description"], False)
+    eq("stamp carries the arrival time",
+       "source: announcement 2026-09-21T15:00:00" in body["description"], True)
+
+    # No time in the mail: the event keeps its time and its caveat.
+    cal, _ = run({"u1": timed}, action("darees-majlis", None))
+    body = cal.patched[0]
+    eq("no time leaves start alone", "start" in body, False)
+    eq("no time keeps caveat", TIMING_CAVEAT in body["description"], True)
+
+    # No time, but an earlier mail already announced one: nothing reappears.
+    announced = {**timed, "description": "source: announcement 2026-09-01T10:00:00"}
+    cal, _ = run({"u1": announced}, action("darees-majlis", None))
+    eq("announced time survives a timeless follow-up", "start" in cal.patched[0], False)
+    eq("no caveat added over an announced time",
+       TIMING_CAVEAT in cal.patched[0]["description"], False)
+
+    # No time and no event: insert at the default, and say it is a default.
+    cal, _ = run({}, action("darees-majlis", None))
+    eq("timeless insert keeps caveat", TIMING_CAVEAT in cal.imported[0]["description"], True)
+
+    # An all-day banner stays all-day, announced time or not.
+    banner = {"id": "e2", "start": {"date": "2026-06-15"}, "description": "source: generated"}
+    cal, _ = run({"u1": banner}, action("ashara-mubaraka", "20:00"))
+    eq("all-day banner keeps its dates", "start" in cal.patched[0], False)
+    cal, counts = run({}, action("ashara-mubaraka", "20:00"))
+    eq("no timed duplicate inside a banner", (cal.imported, counts["skipped"]), ([], 1))
+
+    # A correction later the same day as the swept original still applies.
+    swept = {**timed, "description": "source: announcement 2026-09-21T09:00:00"}
+    cal, _ = run({"u1": swept}, action("darees-majlis", "19:00"))
+    eq("same-day correction applies", len(cal.patched), 1)
+    cal, counts = run({"u1": swept}, action("darees-majlis", "19:00",
+                                            mail_at=datetime(2026, 9, 21, 8, 0)))
+    eq("earlier same-day mail skipped", (cal.patched, counts["skipped"]), ([], 1))
+    legacy = {**timed, "description": "source: announcement 2026-09-21"}
+    cal, _ = run({"u1": legacy}, action("darees-majlis", "19:00"))
+    eq("date-only stamp re-applies that day once", len(cal.patched), 1)
+
+
+def test_same_day_order(ids):
+    def mail(hour, kind):
+        return {"date": date(2026, 9, 21), "received": datetime(2026, 9, 21, hour),
+                "kind": kind, "subject": "s"}
+
+    original = resolve(occurrence(start_time="18:30"), mail(9, "per-miqaat"), ids)
+    fix = resolve(occurrence(start_time="19:00"), mail(15, "correction"), ids)
+    merged = merge_day([fix, original])   # handed over newest first
+    eq("same-day correction wins by arrival time", merged.start_time, "19:00")
+    eq("same-day merge raises no conflict", merged.conflict, None)
+
+
 # --- Runner ------------------------------------------------------------------
 
 
@@ -677,6 +773,8 @@ def self_test() -> None:
     test_backoff()
     test_body_extraction()
     test_fetch(cfg)
+    test_apply(cfg, catalog)
+    test_same_day_order(ids)
 
     if failures:
         raise AssertionError(

@@ -344,19 +344,25 @@ def fetch(gmail, cfg: dict, since: date) -> list[dict]:
         if any(frag in subject.lower() for frag in ignore):
             continue
 
-        received = datetime.fromtimestamp(int(msg["internalDate"]) / 1000).date()
+        received = datetime.fromtimestamp(int(msg["internalDate"]) / 1000)
         mails.append(
             {
                 "id": mid,
                 "subject": subject,
-                "date": received,
+                "date": received.date(),
+                "received": received.replace(microsecond=0),
                 "body": _body_text(msg["payload"]),
                 "kind": classify(subject, cfg),
             }
         )
 
-    mails.sort(key=lambda m: m["date"])
+    mails.sort(key=mail_time)
     return mails
+
+
+def mail_time(mail: dict) -> datetime:
+    """When a mail arrived. Same-day mails need the time to stay in order."""
+    return mail.get("received") or datetime.combine(mail["date"], datetime.min.time())
 
 
 def classify(subject: str, cfg: dict) -> str:
@@ -489,13 +495,24 @@ def check_kabisa(resolutions: list[Resolved]) -> None:
 
 # --- Calendar ----------------------------------------------------------------
 
-STAMP = re.compile(r"^source:\s*announcement\s+(\d{4}-\d{2}-\d{2})", re.M)
+STAMP = re.compile(
+    r"^source:\s*announcement\s+(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?)", re.M
+)
 
 
-def already_swept(description: str, mail_date: date) -> bool:
-    """True if this event already carries a stamp at or after this mail."""
+def already_swept(description: str, mail_at: date | datetime) -> bool:
+    """True if this event already carries a stamp at or after this mail.
+
+    Stamps carry the mail's arrival time, so a correction sent later on the same
+    day as the original is still applied. A date-only stamp from before that
+    counts as midnight, which re-applies that day's mail once and is harmless.
+    """
     match = STAMP.search(description or "")
-    return bool(match) and date.fromisoformat(match.group(1)) >= mail_date
+    if not match:
+        return False
+    if not isinstance(mail_at, datetime):
+        mail_at = datetime.combine(mail_at, datetime.min.time())
+    return datetime.fromisoformat(match.group(1)) >= mail_at
 
 
 # Lines generate.py or a previous sweep wrote. Everything else in a description
@@ -511,7 +528,9 @@ MANAGED_PREFIXES = (
 )
 
 
-def rebuild_description(existing: str, *, source: str, review: str | None) -> str:
+def rebuild_description(
+    existing: str, *, source: str, review: str | None, time_unconfirmed: bool = False
+) -> str:
     """Keep the human-written lines; replace the machine-managed ones."""
     keep = [
         line
@@ -522,6 +541,8 @@ def rebuild_description(existing: str, *, source: str, review: str | None) -> st
         keep.pop()
     if review:
         keep.append(f"NEEDS REVIEW: {review}")
+    if time_unconfirmed:
+        keep.append(TIMING_CAVEAT)
     keep.append(f"source: {source}")
     return "\n".join(keep)
 
@@ -561,6 +582,7 @@ class Action:
     reason: str = ""
     evidence: str = ""
     mail_date: date | None = None
+    mail_at: datetime | None = None
     seq: int = 0
     day: int = 1
     of_days: int = 1
@@ -589,6 +611,7 @@ class Merged:
     venue: str | None = None
     evidence: str = ""
     mail_date: date | None = None
+    mail_at: datetime | None = None
     hijri_year: int | None = None
     hijri_month: int | None = None
     hijri_day: int | None = None
@@ -597,7 +620,7 @@ class Merged:
 
 def merge_day(entries: list[Resolved]) -> Merged:
     """Fold every mail about one day, oldest first, into a single record."""
-    entries = sorted(entries, key=lambda r: r.mail["date"])
+    entries = sorted(entries, key=lambda r: mail_time(r.mail))
     m = Merged(when=entries[0].when)
 
     for r in entries:
@@ -624,6 +647,7 @@ def merge_day(entries: list[Resolved]) -> Merged:
             m.hijri_day = occ.hijri_day
         # The stamp tracks the newest mail, so a re-sweep skips what it has read.
         m.mail_date = r.mail["date"]
+        m.mail_at = mail_time(r.mail)
     return m
 
 
@@ -715,6 +739,7 @@ def plan(resolutions: list[Resolved], cfg: dict, catalog: dict) -> list[Action]:
                     start_time=r.start_time,
                     evidence=r.evidence,
                     mail_date=r.mail_date,
+                    mail_at=r.mail_at,
                     seq=seq,
                     day=index + 1,
                     of_days=len(days),
@@ -738,30 +763,60 @@ def apply(calendar, calendar_id, cfg, catalog, actions, write):
             continue
 
         event = find_event(calendar, calendar_id, a.event_uid)
-        if event and already_swept(event.get("description", ""), a.mail_date):
+        if event and already_swept(event.get("description", ""), a.mail_at or a.mail_date):
             counts["skipped"] += 1
             continue
 
         default_time, minutes = timing(cfg, a.miqaat_id)
+        existing = (event or {}).get("description", "")
+        all_day = minutes == 0 or "date" in (event or {}).get("start", {})
+        if all_day and not event:
+            # The day sits inside an all-day banner generate.py already emitted.
+            # A timed insert would sit beside it as a duplicate.
+            counts["skipped"] += 1
+            print(f"  SKIP    {a.miqaat_id} {a.when}  (inside an all-day banner)")
+            continue
+
         # Distinguish a time the jamaat announced from one this config assumed.
         # Both end up on the calendar; only one of them is evidence.
         announced = bool(a.start_time)
-        start_time = a.start_time or default_time
-        note = "" if announced else "  (time not announced, using config default)"
-        hh, mm = (int(x) for x in start_time.split(":"))
-        begins = datetime.combine(a.when, datetime.min.time()).replace(hour=hh, minute=mm)
-        ends = begins + timedelta(minutes=minutes or 150)
+        stamp = a.mail_at.isoformat(timespec="seconds") if a.mail_at else a.mail_date
+        source = f"announcement {stamp}"
+        # Keep the event's own times when the mail gives none to replace them,
+        # and never turn an all-day banner into an evening slot.
+        keep_times = bool(event) and (all_day or not announced)
 
-        body = {
-            "start": {"dateTime": begins.isoformat(), "timeZone": tz},
-            "end": {"dateTime": ends.isoformat(), "timeZone": tz},
-            "status": "confirmed",
-            "description": rebuild_description(
-                (event or {}).get("description", ""),
-                source=f"announcement {a.mail_date}",
-                review=None,
-            ),
-        }
+        if keep_times:
+            start_time = "all-day" if all_day else "time kept"
+            note = "" if announced else "  (time not announced)"
+            if all_day and announced:
+                note = f"  (announced {a.start_time} not applied to an all-day event)"
+            body = {
+                "status": "confirmed",
+                "description": rebuild_description(
+                    existing,
+                    source=source,
+                    review=None,
+                    time_unconfirmed=TIMING_CAVEAT in existing,
+                ),
+            }
+        else:
+            start_time = a.start_time or default_time
+            note = "" if announced else "  (time not announced, using config default)"
+            hh, mm = (int(x) for x in start_time.split(":"))
+            begins = datetime.combine(a.when, datetime.min.time()).replace(hour=hh, minute=mm)
+            ends = begins + timedelta(minutes=minutes)
+            body = {
+                "start": {"dateTime": begins.isoformat(), "timeZone": tz},
+                "end": {"dateTime": ends.isoformat(), "timeZone": tz},
+                "status": "confirmed",
+                "description": rebuild_description(
+                    existing,
+                    source=source,
+                    review=None,
+                    time_unconfirmed=not announced,
+                ),
+            }
 
         if event:
             counts["promoted"] += 1
@@ -794,8 +849,9 @@ def apply(calendar, calendar_id, cfg, catalog, actions, write):
                     name = f"{name} ({hd}mi)"
                     body["description"] = rebuild_description(
                         f"{hd}mi {MONTHS[hm - 1]} {hy}H\n" + (spec.get("note") or ""),
-                        source=f"announcement {a.mail_date}",
+                        source=source,
                         review=None,
+                        time_unconfirmed=not announced,
                     )
                 body |= {
                     "iCalUID": a.event_uid,
