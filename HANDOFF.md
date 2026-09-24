@@ -113,9 +113,9 @@ entries carry hand-set defaults that no sweep will ever correct.
    is gone; if it lapses, check whether Google treats restricted `gmail.readonly`
    differently for unverified production apps.
 
-   If this repo ever does go public, rewrite history first. The jamaat's list
-   address sits in the initial commit; scrubbing it from the file later left the
-   past untouched. `git log -S` against that address will find the commit.
+   The jamaat's list address was scrubbed from all history on 23 Sep 2026 with
+   `git filter-repo --replace-text` and force-pushed. Any other clone made
+   before that still carries it; delete such clones rather than pull into them.
 
 2. **Ashara and Eid timings will never self-correct.** ABNJ announces neither, so
    those entries carry hand-set defaults. The Ashara raat majlis sits at 19:30,
