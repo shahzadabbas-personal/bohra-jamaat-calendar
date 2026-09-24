@@ -9,11 +9,12 @@ varies by jamaat and, as it turns out, by year. This repo separates the two.
 
 ## Verify before you publish
 
-**The kabisa (leap year) set in `core/misri.py` is unverified.** Anchor data
-only covers 1447H–1448H, which cannot distinguish between the competing 30-year
-cycle variants. Check `KABISA_REMAINDERS` against your jamaat's printed taqweem
-or Bu Saheba's Sahifa before trusting anything past 1448H. An off-by-one there
-shifts every subsequent year.
+**The kabisa (leap year) set in `core/misri.py` is verified only through
+1450H.** The mumineen.org feed agrees with it on all 642 date pairs across
+1448H–1450H, but the rest of the 30-year cycle is untested. Check
+`KABISA_REMAINDERS` against your jamaat's printed taqweem or Bu Saheba's Sahifa
+before trusting anything past 1450H. An off-by-one there shifts every subsequent
+year.
 
 Generated dates carry religious weight. Treat this tool as a scheduling aid,
 never as an authority. Reconcile against the printed taqweem.
@@ -26,6 +27,7 @@ core/
                  validated against 19 announcement emails spanning a full year.
   catalog.yaml   Superset of miqaats. No jamaat observes all of them.
   generate.py    catalog + jamaat config -> ICS
+  dates.py       jamaat config -> ICS with the Misri date on every day
   sweep.py       announcement email -> timing correction
 jamaats/
   _template/     copy this
@@ -59,6 +61,24 @@ python3 core/sweep.py jamaats/nj-burhani --apply    # write it
 The sweep needs a Gmail and Calendar OAuth client at `jamaats/<id>/credentials.json`
 and an `ANTHROPIC_API_KEY` in your environment. It leaves anything it cannot read
 cleanly untouched and prints it for you to check by hand.
+
+## Daily Bohra dates
+
+Google Calendar's own Islamic calendar is not the Misri one and often
+disagrees by a day. `dates.py` builds a second calendar with the Misri date as
+an all-day event on every day, miqaat or not:
+
+```bash
+python3 core/dates.py jamaats/nj-burhani     # through 1450H
+```
+
+Import it into its own shared Google Calendar, not the miqaat one. The sweep's
+`--prune` deletes anything in the miqaat calendar it did not generate, so
+daily dates there would be pruned. Members add both calendars to see miqaats
+and dates together, or only the miqaat one.
+
+Each label is the date during daylight; from maghrib it is already the next
+Hijri day. The script refuses to go past 1450H, the last verified year.
 
 ## Sharing it
 

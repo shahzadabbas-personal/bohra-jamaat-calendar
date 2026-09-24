@@ -19,6 +19,8 @@ jobs:
         run: python3 core/misri.py
       - name: Verify sweep logic
         run: python3 core/test_sweep.py
+      - name: Verify daily dates
+        run: python3 core/test_dates.py
       - name: Sweep announcements
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}

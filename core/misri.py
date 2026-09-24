@@ -17,12 +17,13 @@ spanning 1447H-1448H (see tests at the bottom of this file).
 
     1 Muharram 1448H == 15 June 2026
 
->>> VERIFY BEFORE PRODUCTION USE <<<
-KABISA_REMAINDERS has NOT been independently verified. The anchor data only
-covers 1447H (common) and 1448H, which is not enough to distinguish between
-the competing 30-year cycle variants in circulation. Check the set below
-against your jamaat's printed taqweem or Bu Saheba's Sahifa before trusting
-dates beyond 1448H. An off-by-one here shifts every subsequent year.
+>>> VERIFY BEFORE TRUSTING DATES PAST 1450H <<<
+KABISA_REMAINDERS is only partly verified. The mumineen.org feed agrees with
+this module on all 642 of its date pairs across 1448H-1450H, which settles the
+cycle positions those years touch. The rest of the 30-year cycle is untested,
+so dates after VERIFIED_THROUGH are speculative. Check the set below against
+your jamaat's printed taqweem or Bu Saheba's Sahifa before extending it. An
+off-by-one here shifts every subsequent year.
 """
 
 from __future__ import annotations
@@ -52,6 +53,9 @@ KABISA_REMAINDERS = frozenset({2, 5, 8, 10, 13, 16, 19, 21, 24, 27, 29})
 
 ANCHOR_HIJRI_YEAR = 1448
 ANCHOR_GREGORIAN = date(2026, 6, 15)  # 1 Moharram 1448H
+
+# Last Hijri year checked against independent data (see warning above).
+VERIFIED_THROUGH = 1450
 
 
 # --- Core arithmetic ---------------------------------------------------------

@@ -77,6 +77,10 @@ Generated 1448H dates match the real emails exactly.
 and 1448H, which cannot distinguish between the competing 30-year cycle
 variants. Years beyond 1448H are unverified.
 
+Superseded 24 Sep 2026: the mumineen.org check below extends this to 1450H.
+`misri.py` and the README now say so, and `VERIFIED_THROUGH = 1450` in
+`misri.py` is the single place that horizon lives.
+
 The printed 1448H taqweem does not settle this. 1448H is already an anchor, and
 every competing variant agrees on it. Settling the cycle needs a trusted
 Gregorian date for 1 Moharram 1449H or later.
@@ -138,6 +142,71 @@ entries carry hand-set defaults that no sweep will ever correct.
 4. **Generation stops at one year by choice, not by doubt.** The kabisa set holds
    through 1450H against 642 independent date pairs, so `--years 3` is available
    whenever a longer horizon justifies the re-import.
+
+## In progress: daily Bohra dates and personal events (paused 24 Sep 2026)
+
+Members asked to see the Misri date on every day, not just miqaat days, and to
+keep Hijri birthdays and anniversaries. Google Calendar's built-in Islamic
+calendar is not the Misri one, so it cannot do either.
+
+**Decided.**
+
+- **Two shared calendars from one codebase, no fork or branch.** The existing
+  Miqaat calendar stays as it is. A new Bohra Dates calendar carries one
+  all-day event per day. The share page offers "Miqaats + Bohra dates" first
+  and "Miqaats only" beside it. Shahzad first leaned towards putting the dates
+  in the shared calendar and forking a miqaat-only variant. Codex reviewed the
+  question independently and made the same recommendation.
+- **Why the dates cannot live in the Miqaat calendar:** `sweep.py --prune
+  --apply` deletes every unstamped event in its range that `generate.py` did not
+  produce, so it would delete the daily dates. A miqaat-only copy would also
+  need the sweep to keep two calendars' timings in sync, and anyone who added
+  both would see each miqaat twice. (It would not spam notifications: the sweep
+  patches with `sendUpdates="none"`.)
+- **Label** reads `13mi Rabi ul Akhar 1448H`. It is the daylight date; from
+  maghrib it is the next Hijri day. The event description says so, and the
+  share page should too.
+- **Horizon is 1450H**, the last verified year. `dates.py` refuses to go further.
+- **Personal events** are for any member who forks the repo: a gitignored
+  per-person input file plus a committed blank template, generating a private
+  ICS each person imports into their own Google account. Nothing personal is
+  committed, because the repo is public.
+- **Bohra birthdays** can be entered as a Hijri date or as a Gregorian birth date
+  with a "born after maghrib" flag. A 30mi Zilhaj date in a common year (29-day
+  Zilhaj) falls back to **29mi Zilhaj**.
+
+**Done, uncommitted.**
+
+- `core/dates.py` builds the Bohra Dates ICS: 1064 days, 1448H-1450H, 293 KB
+  (Google's import limit is 1 MB per file, not a count of events).
+- `core/test_dates.py` covers no gaps or repeats across month and year
+  boundaries, all 19 `VERIFIED_ANCHORS`, and unique UIDs. It runs in CI.
+- `generate.py`: file writing and the CRLF check moved into `write_ics()` so
+  `dates.py` shares them. The miqaat ICS is byte-identical before and after,
+  apart from DTSTAMP.
+- `misri.py` and the README warn from 1450H, not 1448H. The README has a
+  "Daily Bohra dates" section.
+- All tests pass. No linter is configured; a one-off `uvx ruff check` flagged
+  only `datetime.now()` in `dates.py`, which copies `generate.py` on purpose,
+  and findings that already sat in `generate.py` beforehand.
+
+**Left to do.**
+
+1. **Commit** the work above. Not committed yet.
+2. **Shahzad, by hand:** run `core/dates.py jamaats/nj-burhani`, create a
+   Google Calendar named "Anjuman-e-Burhani Bohra Dates", import
+   `jamaats/nj-burhani/nj-burhani-dates.ics`, and make it public.
+3. **Share page** (`shahzadabbas-personal/miqaat`, a separate repo): add the
+   "Miqaats + Bohra dates" route once the new calendar ID exists. Test whether
+   one Google link can add two calendars before promising it; the documented
+   flow adds one at a time. iPhone needs two `webcal://` subscriptions.
+4. **Phase 2, personal events:** input template, gitignore rule, generator,
+   tests (including the 30mi Zilhaj fallback and the maghrib flag), README
+   steps. Codex's review also asked for a documented way to update or delete a
+   personal event after import. Deterministic UIDs update events on re-import
+   but never remove them, so a deleted entry needs a stated path.
+5. **Before 1451H:** extend `VERIFIED_THROUGH` only against a trusted source,
+   then regenerate and re-import the dates calendar.
 
 ## Open findings from the Codex review
 
