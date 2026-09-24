@@ -11,6 +11,9 @@ NJ, built so any jamaat can fork it and swap in their own schedule.
 Scaffold and sweep are both done. `core/sweep.py` has run against a year of real
 announcements and has written to the live calendar.
 
+The repo went public on 23 Sep 2026 so other jamaats can fork it. Anything
+committed from here on is visible to anyone.
+
 ## Decisions already made (and why)
 
 **Two layers, not one.** Miqaat dates are computable; local program times are
@@ -116,6 +119,9 @@ entries carry hand-set defaults that no sweep will ever correct.
    The jamaat's list address was scrubbed from all history on 23 Sep 2026 with
    `git filter-repo --replace-text` and force-pushed. Any other clone made
    before that still carries it; delete such clones rather than pull into them.
+   GitHub may still serve the pre-rewrite commits to anyone holding their exact
+   hash until it garbage-collects them. A GitHub Support request purges them
+   outright; not yet sent.
 
 2. **Ashara and Eid timings will never self-correct.** ABNJ announces neither, so
    those entries carry hand-set defaults. The Ashara raat majlis sits at 19:30,
@@ -132,6 +138,27 @@ entries carry hand-set defaults that no sweep will ever correct.
 4. **Generation stops at one year by choice, not by doubt.** The kabisa set holds
    through 1450H against 642 independent date pairs, so `--years 3` is available
    whenever a longer horizon justifies the re-import.
+
+## Open findings from the Codex review
+
+Codex reviewed the whole repo on 23 Sep 2026. Three findings are fixed (all-day
+banners, timeless announcements, same-day corrections), plus the two from its
+review of the OAuth fix. These remain, most severe first. Only the first three
+were checked against the code; the rest are Codex's word until someone reads
+the line.
+
+| Finding | Where | Status |
+|---|---|---|
+| `seasonal` in config (13 Ashara ohbat Fridays) is never generated | `generate.py` `expand()` | Confirmed. Needs a re-import once fixed |
+| Full mail bodies go to Claude before anything filters them | `sweep.py` `extract()` | Confirmed, by design. `privacy.html` discloses it |
+| `--prune --apply` can delete a hand-added event in the generated range | `sweep.py` `prune()` | Confirmed. Manual flag only; the schedule never passes it |
+| Sweep writes a miqaat the jamaat does not list in `observes` | `sweep.py` `resolve()` | Unchecked |
+| A later correction does not clear an earlier two-mail time conflict | `sweep.py` `merge_day()` | Unchecked |
+| Plan groups by Gregorian year but UIDs use Hijri year; a miqaat twice in one Gregorian year may duplicate | `sweep.py` `plan()` | Unchecked |
+| Announced venue is extracted but never written to `location` | `sweep.py` `apply()` | Unchecked |
+| Timed multi-day miqaats (3-day Mohammed Burhanuddin urus) generate day one only | `generate.py` | Unchecked |
+| `24:00` passes the time regex, then crashes mid-run after earlier writes | `sweep.py` `resolve()` | Unchecked |
+| ICS line folding can emit a 76-byte line | `generate.py` `fold()` | Unchecked, cosmetic |
 
 ## Miqaats the inventory found and nobody added
 
