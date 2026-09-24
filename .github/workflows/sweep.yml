@@ -21,6 +21,8 @@ jobs:
         run: python3 core/test_sweep.py
       - name: Verify daily dates
         run: python3 core/test_dates.py
+      - name: Verify personal dates
+        run: python3 core/test_personal.py
       - name: Sweep announcements
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}

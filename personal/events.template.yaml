@@ -1,0 +1,20 @@
+# Your own Hijri dates: birthdays, anniversaries, urus.
+#
+# Copy this file to personal/events.yaml and fill that one in. It is never
+# committed, because this repo is public. Then run:
+#
+#   python3 core/personal.py personal/events.yaml
+#
+# and import personal/personal.ics into a private Google Calendar of your own.
+#
+# Write each date as day then month: "23 Safar", "13 Rabi ul Akhar",
+# "1 Zilhaj". No year: each entry repeats every Hijri year. 30 Zilhaj falls on
+# 29 Zilhaj in years when Zilhaj has only 29 days.
+#
+# Each name must be unique. Renaming an entry, or deleting one, leaves its old
+# event in your calendar; delete that by hand.
+
+events:
+  # Replace this example with your own, and remove the # from each line.
+  # - name: Example birthday
+  #   hijri: 23 Safar

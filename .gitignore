@@ -16,3 +16,7 @@ logs/
 
 __pycache__/
 *.pyc
+
+# Personal Hijri dates. Only the blank template is tracked.
+personal/*
+!personal/events.template.yaml

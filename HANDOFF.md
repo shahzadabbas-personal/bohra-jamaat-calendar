@@ -178,9 +178,26 @@ calendar is not the Misri one, so it cannot do either.
   per-person input file plus a committed blank template, generating a private
   ICS each person imports into their own Google account. Nothing personal is
   committed, because the repo is public.
-- **Bohra birthdays** can be entered as a Hijri date or as a Gregorian birth date
-  with a "born after maghrib" flag. A 30mi Zilhaj date in a common year (29-day
-  Zilhaj) falls back to **29mi Zilhaj**.
+- **Personal dates are entered in Hijri only**, as day and month with no year
+  ("23 Safar"). Placing one in 1448H-1450H uses only the verified range.
+  Converting a Gregorian birth date like 1985 would run through the unverified
+  part of the kabisa cycle, so `born:` and its "after maghrib" flag were dropped
+  on 24 Sep 2026. A 30mi Zilhaj date in a common year falls back to **29mi**.
+- **Personal UIDs come from the entry's name and year**, not its date, so a
+  corrected date moves the event on re-import. Renaming or deleting an entry
+  leaves the old event, which the README tells people to delete by hand.
+  Duplicate names are refused.
+- **Re-import moves an event by UID alone.** Tested 24 Sep 2026 in a throwaway
+  calendar: two events imported on 6 Aug 2026, then re-imported on 7 Aug, one
+  with `SEQUENCE` and one without. Both moved, no duplicates, nothing left
+  behind. This also backs the README's "updates in place" claim for
+  `generate.py` and `dates.py`, which set no `SEQUENCE`. `personal.py` sets one
+  anyway (minutes since the epoch) for an event someone edited by hand.
+- **Codex reviewed `personal.py` on 24 Sep 2026.** Fixed: `SEQUENCE`, a start
+  year past `--through`, and the template's live example. Left: a UID clash
+  only if a fork names its jamaat `personal`, a raw carriage return inside a
+  YAML name, and names over about 65 characters hitting the shared `fold()` bug
+  already in the findings table.
 
 **Done.**
 
@@ -209,11 +226,9 @@ calendar is not the Misri one, so it cannot do either.
 **Left to do.**
 
 1. **Test the share page's new buttons** once on an iPhone and once on Android.
-2. **Phase 2, personal events:** input template, gitignore rule, generator,
-   tests (including the 30mi Zilhaj fallback and the maghrib flag), README
-   steps. Codex's review also asked for a documented way to update or delete a
-   personal event after import. Deterministic UIDs update events on re-import
-   but never remove them, so a deleted entry needs a stated path.
+2. **Personal dates, phase 2:** a web page on the share site where a member
+   types dates into a form and downloads the ICS, with no install and nothing
+   sent anywhere. It would reuse `personal.py`'s rules. Deferred on 24 Sep 2026.
 3. **Before 1451H:** extend `VERIFIED_THROUGH` only against a trusted source,
    then regenerate and re-import the dates calendar.
 

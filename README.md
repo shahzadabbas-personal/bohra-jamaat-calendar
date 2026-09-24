@@ -29,9 +29,11 @@ core/
   generate.py    catalog + jamaat config -> ICS
   dates.py       jamaat config -> ICS with the Misri date on every day
   sweep.py       announcement email -> timing correction
+  personal.py    your own Hijri dates -> private ICS
 jamaats/
   _template/     copy this
   nj-burhani/    reference implementation
+personal/        your own dates; only the template is committed
 ```
 
 ## Use
@@ -79,6 +81,25 @@ and dates together, or only the miqaat one.
 
 Each label is the date during daylight; from maghrib it is already the next
 Hijri day. The script refuses to go past 1450H, the last verified year.
+
+## Personal dates
+
+Birthdays, anniversaries and urus that follow the Hijri calendar can go in a
+private calendar of your own. Copy `personal/events.template.yaml` to
+`personal/events.yaml`, list each date as a name and a Hijri day and month,
+then run:
+
+```bash
+python3 core/personal.py personal/events.yaml
+```
+
+Import `personal/personal.ics` into a new private Google Calendar, not a
+shared one. Both files stay out of git, because the repo is public.
+
+To change a date, edit the file, run it again and re-import; the event moves.
+Renaming or deleting an entry leaves its old event behind, so delete that one
+by hand in the calendar. Dates are entered in Hijri, so nothing converts a past
+year through the unverified part of the leap-year cycle.
 
 ## Sharing it
 
