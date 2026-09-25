@@ -103,6 +103,11 @@ remainders 8 and 9 and supports the Fatimid variant over the common tabular one,
 which marks 7 rather than 8. The other eight positions in the cycle are untested,
 so generation is safe to 1450H and speculative after it.
 
+Two family records checked on 24 Sep 2026 add weight backwards: a death in
+1440H and one in 1445H, each recorded with both its Hijri and Gregorian date,
+convert exactly. That confirms the leap-year count across 1440H-1447H, not which
+years carry the day, so it does not lift `VERIFIED_THROUGH`.
+
 **Ashara and Eid timings come from the jamaat, not from mail.** A year of
 announcements contains no Ashara timing mail at all -- the Ashara week itself is
 nearly silent -- and the only Eid mail is the afternoon zohr/asr one. Those
@@ -143,7 +148,7 @@ entries carry hand-set defaults that no sweep will ever correct.
    through 1450H against 642 independent date pairs, so `--years 3` is available
    whenever a longer horizon justifies the re-import.
 
-## Daily Bohra dates (live 24 Sep 2026) and personal events (next)
+## Daily Bohra dates and personal dates (both live 24 Sep 2026)
 
 Members asked to see the Misri date on every day, not just miqaat days, and to
 keep Hijri birthdays and anniversaries. Google Calendar's built-in Islamic
@@ -222,6 +227,24 @@ calendar is not the Misri one, so it cannot do either.
 - All tests pass. No linter is configured; a one-off `uvx ruff check` flagged
   only `datetime.now()` in `dates.py`, which copies `generate.py` on purpose,
   and findings that already sat in `generate.py` beforehand.
+- **Personal dates:** `core/personal.py`, `core/test_personal.py` (in CI), a
+  blank `personal/events.template.yaml`, a gitignore rule, and a README section.
+  Committed as b320619.
+- **Shahzad's own family calendar is live**, "Our Family Bohra Dates", private,
+  13 entries across 1448H-1450H (Google reported 39 of 39 imported). He shares
+  it view-only with his family. Its source is his local
+  `personal/events.yaml`, which git ignores; that file is the master list, so
+  edits go there and get re-imported, never made in Google. One entry in it is
+  marked "to confirm". Nothing about it belongs in this repo.
+
+**Driving Google Calendar's import page from a browser agent.** Three traps,
+all hit on 24 Sep 2026. The "Add to calendar" list can stay open invisibly
+after a choice, so a click on Import lands on a calendar row instead: once it
+silently switched the target to the public Miqaat calendar before anything was
+imported. Set the target, confirm it in the page, and click Import through the
+page's own script with a guard on the selected calendar name. The first Import
+click sometimes does nothing, and an import can take 30 seconds. Re-importing
+the same file is harmless because UIDs are stable.
 
 **Left to do.**
 
