@@ -22,7 +22,7 @@ Catalog cleanup, 5 Oct 2026. Nine missing miqaats were added and four existing
 dates corrected, each checked against mumineen.org and ABNJ's own emails.
 Shahzad imported the 15 changed events into the live calendar. Ashara waaz and
 majlis times were dropped, Eid ul Adha given a morning placeholder, and the
-GitHub Actions schedule stopped. Committed locally, not pushed.
+GitHub Actions schedule stopped. Committed and pushed (20b4491).
 
 ## Decisions
 
@@ -100,7 +100,8 @@ GitHub Actions schedule stopped. Committed locally, not pushed.
 
 - **Imported to the live calendar** by Shahzad on 5 Oct 2026: 15 events (12 new,
   3 moved). Shahzad confirmed the Fatema tuz Zahra majlis now shows on
-  Mon 19 Oct 2026. The import file has been deleted.
+  Mon 19 Oct 2026. He also imported the Eid ul Adha placeholder. Both import
+  files have been deleted.
 - `core/test_sweep.py`: `test_day_range_uids` now supplies its own Ashara waaz
   and majlis entries, since ABNJ's config no longer lists them.
 - **Published OAuth app no longer expires.** The daily sweep still succeeded on
@@ -122,10 +123,6 @@ GitHub Actions schedule stopped. Committed locally, not pushed.
 
 ## Open issues
 
-- **Not pushed.** This session's commit is local only. The cron removal in
-  `sweep.yml` reaches GitHub on push; the workflow is already disabled there.
-- **Eid ul Adha placeholder not yet in the live calendar.** Import
-  `jamaats/nj-burhani/nj-burhani-eid-ul-adha.ics` (one event, gitignored).
 - **Yaumul Arafa and Ghadir-e-Khum have no start time**, so they default to
   19:00 until the sweep corrects them. Left as is.
 - **`khatmul-quran-shehrullah` may have been a one-off** in 1447H. Revisit when:
@@ -141,8 +138,8 @@ GitHub Actions schedule stopped. Committed locally, not pushed.
 
 ## Next action
 
-Import `jamaats/nj-burhani/nj-burhani-eid-ul-adha.ics` into the Miqaat calendar,
-then push when Shahzad is ready.
+Test the share page's new Bohra dates buttons once on an iPhone and once on
+Android (see "Left to do" below).
 
 ## Daily Bohra dates and personal dates (both live 24 Sep 2026)
 
