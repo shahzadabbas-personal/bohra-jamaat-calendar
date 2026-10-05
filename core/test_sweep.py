@@ -392,6 +392,12 @@ def test_day_range_uids(cfg, ids, catalog):
     Same failure as the monthly darees bug: a seq the sweep invents rather than
     mirrors puts a duplicate beside the real event instead of promoting it.
     """
+    # ABNJ no longer observes these with set times, so supply the entries here.
+    cfg = {**cfg, "observes": cfg["observes"] + [
+        {"id": "ashara-waaz", "observed_offset": 0},
+        {"id": "ashara-raat-majlis", "observed_offset": 0},
+    ]}
+
     # 3mi Moharram 1448H fell on 17 June 2026.
     for miqaat_id in ("ashara-waaz", "ashara-raat-majlis"):
         occ = occurrence(miqaat_id=miqaat_id, hijri_year=1448, hijri_month=1,

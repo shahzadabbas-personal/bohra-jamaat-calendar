@@ -58,22 +58,6 @@ observes:
     confirmed: false
     note: Relay center in 1448H.
 
-  - id: ashara-waaz
-    observed_offset: 0
-    start_time: "10:30"
-    duration_minutes: 180      # runs until zohr/asr namaz
-    confirmed: false
-
-  - id: ashara-raat-majlis
-    observed_offset: 0
-    start_time: "19:30"
-    duration_minutes: 150
-    confirmed: false
-    note: >-
-      Held roughly an hour before maghrib. 19:30 is right while Ashara falls in
-      June; Ashara moves about eleven days earlier each year, so revisit this as
-      maghrib shifts.
-
   - id: ashura
     observed_offset: 0
     start_time: "10:30"
@@ -103,7 +87,7 @@ observes:
     note: Held on 11mi in both 1447H and 1448H. Niyaz jaman then waaz.
 
   - id: urus-mohammed-burhanuddin
-    observed_offset: 0
+    observed_offset: -1
     confirmed: false
     note: Multi-day ayyam program; the sweep must fan out across days.
 
@@ -138,7 +122,7 @@ observes:
     confirmed: false
 
   - id: lailatul-qadr
-    observed_offset: 0
+    observed_offset: -1        # 23rd raat, the evening of 22mi
     confirmed: false
 
   # Added from the 400-day announcement inventory. Dates are read from how the
@@ -165,6 +149,45 @@ observes:
     observed_offset: -1
     start_time: "20:00"
     duration_minutes: 300      # ahya ul lail runs late
+    confirmed: false
+
+  # Added 5 Oct 2026 from the inventory's leftover list. Days come from how the
+  # mail worded them; unconfirmed until a sweep verifies each one.
+  - id: salgirah-imamuz-zaman
+    observed_offset: -1
+    confirmed: false
+
+  - id: milad-mohammed-burhanuddin
+    observed_offset: -1
+    start_time: "18:15"        # procession at 6:15 pm in 1448H
+    confirmed: false
+
+  - id: pehli-raat-rajab
+    observed_offset: -1
+    confirmed: false
+
+  - id: milad-amirul-mumineen
+    observed_offset: -1
+    confirmed: false
+
+  - id: ayyam-barakat-khuldiyah
+    observed_offset: -1
+    confirmed: false
+
+  - id: urus-taher-saifuddin
+    observed_offset: -1
+    confirmed: false
+
+  - id: urus-abdul-qadir-najmuddin
+    observed_offset: 0
+    confirmed: false
+
+  - id: khatmul-quran-shehrullah
+    observed_offset: 0
+    confirmed: false
+
+  - id: urus-abdul-husain-husamuddin
+    observed_offset: 0
     confirmed: false
 
   - id: shehrullah
@@ -195,9 +218,8 @@ observes:
     duration_minutes: 240      # through fajr, Eid namaz after sunrise, then waaz
     confirmed: false
     note: >-
-      The programme begins before fajr. 05:00 clears fajr for Eid in 1448H-1450H,
-      when it falls in Feb/March; Eid moves about eleven days earlier each year,
-      so revisit this as fajr shifts. The jamaat announces the exact time.
+      The programme begins before fajr. 05:00 is a placeholder; the jamaat
+      announces the exact time a few days ahead and the sweep corrects it.
 
   - id: urus-abdul-qadir-hakimuddin
     observed_offset: -1
@@ -215,8 +237,13 @@ observes:
 
   - id: eid-ul-adha
     observed_offset: 0
+    start_time: "04:00"
+    duration_minutes: 240      # through fajr, Eid namaz after sunrise, then waaz
     confirmed: false
-    note: Zabihat organized separately (Godek Farms in 1447H).
+    note: >-
+      Zabihat organized separately (Godek Farms in 1447H). 04:00 is a placeholder
+      that clears fajr in mid-May; the jamaat announces the exact time a few days
+      ahead and the sweep corrects it.
 
   - id: ghadir-e-khum
     observed_offset: 0

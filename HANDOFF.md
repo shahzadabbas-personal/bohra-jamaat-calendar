@@ -1,152 +1,148 @@
 # HANDOFF
 
-Context for picking this project up in Cowork or Claude Code. Decisions and
-open questions, not a transcript.
+Updated 5 Oct 2026 (Claude Code session with Shahzad).
+
+Context for picking this project up in Cowork, Claude Code or Codex. Decisions
+and open questions, not a transcript. Pruned items live in `HANDOFF-archive.md`.
 
 ## What this is
 
 A shareable Google Calendar of Dawoodi Bohra miqaat dates for Anjuman-e-Burhani
 NJ, built so any jamaat can fork it and swap in their own schedule.
 
-Scaffold and sweep are both done. `core/sweep.py` has run against a year of real
-announcements and has written to the live calendar.
+Scaffold and sweep are both done. `core/sweep.py` runs daily against real
+announcements and writes to the live calendar.
 
 The repo went public on 23 Sep 2026 so other jamaats can fork it. Anything
 committed from here on is visible to anyone.
 
-## Decisions already made (and why)
+## Current task
 
-**Two layers, not one.** Miqaat dates are computable; local program times are
-not. Generated dates go in as all-day or default-time events; the announcement
-sweep promotes them to real times. Austin's jamaat independently arrived at the
-same split, which is decent validation.
+Catalog cleanup, 5 Oct 2026. Nine missing miqaats were added and four existing
+dates corrected, each checked against mumineen.org and ABNJ's own emails.
+Shahzad imported the 15 changed events into the live calendar. Ashara waaz and
+majlis times were dropped, Eid ul Adha given a morning placeholder, and the
+GitHub Actions schedule stopped. Committed locally, not pushed.
 
-**Native shared Google Calendar, not a published ICS feed.** ICS serves the
-one-time bulk import; after that the calendar is the live artifact and the sweep
-edits it directly.
+## Decisions
 
-Corrected later: this decision rested on Google polling *inbound* subscriptions
-every 12–24 hours, which is a different direction from publishing a calendar's
-own `.ics`. Google serves that outbound feed with caching disabled, so
-subscribing to it is not stale, and it is how iPhones get the calendar at all.
-See the sharing section in the README.
+**5 Oct 2026 (Shahzad)**
 
-**`observed_offset` lives in jamaat config, not in the converter.** The Islamic
-day starts at maghrib, so an evening majlis for Hijri day N is held on the
-Gregorian evening of N−1. But this is not a fixed rule — it is a per-jamaat,
-per-year decision.
+- **mumineen.org is the authority for the canonical Hijri day** of a miqaat.
+  ABNJ's emails decide which evening the jamaat holds it, which is what
+  `observed_offset` captures. mumineen.org lists many urus with no programme, so
+  check only miqaats the jamaat holds in person. Its calendar data comes from
+  `POST https://mumineen.org/api/calendar/monthly-miqaats` with
+  `{"month": m, "year": hijri_year}`; a `Fadhil Raat` entry is listed on the
+  evening it is held, every other type on its daylight date.
+- **No set times for the Ashara waaz or raat majlis.** Removed from ABNJ's
+  `observes` (still in `catalog.yaml` for other jamaats). The all-day banner and
+  Ashura stay. Reason: ABNJ never announces them by mail, 1448H was a relay
+  centre, and a guessed time drifts as Ashara moves eleven days earlier a year.
+- **Eid times stay as placeholders.** Shahzad says the jamaat announces Eid
+  timings a few days ahead, so the sweep corrects them. A sunrise-based
+  calculation was proposed and skipped as unnecessary. Eid ul Adha got a
+  04:00–08:00 placeholder (it fell back to the 19:00 default before).
+- **Project rules live in `CLAUDE.md`**: the mumineen.org rule and the
+  import-only-affected-events rule below.
+- **No Ashara ohbat Fridays.** The `seasonal` block in config stays ungenerated
+  on purpose.
+- **GitHub Actions stays off.** Disabled on GitHub (`gh workflow disable`) and
+  the weekly cron removed from `.github/workflows/sweep.yml`, so it runs only
+  by hand. The real sweep is the local scheduled task.
+- **Change the live calendar by importing only the affected events**, never the
+  full `nj-burhani.ics`. Re-import matches by UID, so a full import resets every
+  time the sweep has already promoted back to its generated default.
 
-**The offset genuinely varies by year.** Verified: ABNJ held Chehlum on 20mi
-Safar in 1447H and 19mi in 1448H. Shahadat of Imam Hasan: 28mi in 1447H, 27mi
-in 1448H. Milad un Nabi held at 11mi both years. So some are stable and some
-are not — never assume. This is why the sweep is load-bearing rather than a
-convenience.
+**Earlier decisions, still in force**
 
-**LLM extraction for the sweep, not regex.** ABNJ's format is clean and regex
-would work fine for them. It would not survive porting to another jamaat, which
-is the whole point of the repo. Prompt for
-`{miqaat, hijri_date, gregorian_date, start_time, venue}` from arbitrary text.
+- **Two layers, not one.** Miqaat dates are computable; local program times are
+  not. Generated dates go in as all-day or default-time events; the
+  announcement sweep promotes them to real times. Austin's jamaat independently
+  arrived at the same split.
+- **Native shared Google Calendar, edited in place.** ICS serves the one-time
+  bulk import; after that the calendar is the live artifact. Google serves the
+  calendar's own outbound `.ics` with caching disabled, which is how iPhones
+  subscribe. See the sharing section in the README.
+- **`observed_offset` lives in jamaat config, not in the converter.** An evening
+  majlis for Hijri day N is usually held on the Gregorian evening of N−1, but
+  that is a per-jamaat, per-year decision. Verified: ABNJ held Chehlum on 20mi
+  Safar in 1447H and 19mi in 1448H; Shahadat of Imam Hasan 28mi then 27mi.
+  Never assume; this is why the sweep is load-bearing.
+- **LLM extraction for the sweep, not regex.** Regex would work for ABNJ but
+  would not survive a fork. Prompt for
+  `{miqaat, hijri_date, gregorian_date, start_time, venue}` from arbitrary text.
+- **Generate one year (1448H) by choice.** The kabisa set holds through 1450H
+  against 642 date pairs, so `--years 3` is available whenever a longer horizon
+  justifies the re-import.
+- **No inbox data in the repo.** Mailing lists carry member names, especially
+  teejia and sadaqallah notices. Extract only miqaat/time/venue, never cache raw
+  bodies.
 
-**Publish 1448H only; defer the kabisa question.** We can't get a printed
-taqweem past 1448H, so the leap-year cycle stays unverified. Rather than block
-the project on it, cap generation at one year — `--years 1` covers 1448H, which
-both the announcement emails and the printed calendar confirm. 1448H is safe
-whichever way the cycle resolves, because it is the anchor year itself — the
-kabisa setting never enters its arithmetic. 1449H is the first year that does
-depend on it.
+## Completed
 
-The sweep will settle this without anyone having to remember it. The monthly
-roundup carries both the Hijri and the Gregorian date, so the Moharram 1449H
-announcement (roughly May 2027) is itself the verification. `sweep.py` must
-guard for it: one miqaat off by a day is an `observed_offset` question, but a
-whole Hijri month off by the same amount in the same direction is a
-`KABISA_REMAINDERS` error, and the sweep must halt.
+- **Nine miqaats added** to `core/catalog.yaml` and ABNJ's
+  `jamaats/nj-burhani/config.yaml`, all `confirmed: false`:
+  `salgirah-imamuz-zaman`, `milad-mohammed-burhanuddin`, `pehli-raat-rajab`,
+  `milad-amirul-mumineen`, `ayyam-barakat-khuldiyah`, `urus-taher-saifuddin`,
+  `urus-abdul-qadir-najmuddin`, `khatmul-quran-shehrullah`,
+  `urus-abdul-husain-husamuddin`. Originals listed in `HANDOFF-archive.md`.
+  `milad-mohammed-burhanuddin` clears the review flag the sweep raised daily
+  since 26 Sep.
+- **Four dates corrected** to match mumineen.org:
 
-**No inbox data in the repo.** Jamaat mailing lists carry member names,
-especially in teejia and sadaqallah notices. Extract only miqaat/time/venue,
-never cache raw bodies.
+  | Entry | Was | Now | 1448H date |
+  |---|---|---|---|
+  | `lailatul-qadr` | 23mi, offset 0 | 23mi, offset −1 (evening of 22mi) | 27 Feb 2027 |
+  | `shahadat-ameerul-mumineen` | 21mi | 19mi | 24 Feb 2027 |
+  | `urus-mohammed-burhanuddin` | 13mi ×3, offset 0 | 14mi ×3, offset −1 (raats ending on the 16mi urus) | 25–27 Aug 2026, unchanged |
+  | `shahadat-fatema` | 9mi, offset −1 | 10mi, offset −1 | **19 Oct 2026** (was 18 Oct) |
 
-## Verification status
+- **Imported to the live calendar** by Shahzad on 5 Oct 2026: 15 events (12 new,
+  3 moved). Shahzad confirmed the Fatema tuz Zahra majlis now shows on
+  Mon 19 Oct 2026. The import file has been deleted.
+- `core/test_sweep.py`: `test_day_range_uids` now supplies its own Ashara waaz
+  and majlis entries, since ABNJ's config no longer lists them.
+- **Published OAuth app no longer expires.** The daily sweep still succeeded on
+  5 Oct 2026, past the 30 Sep mark (`logs/sweep-2026-10.log`).
 
-`core/misri.py` self-tests against 19 dated announcements spanning 1447H–1448H,
-covering every month and the year rollover. All pass, roundtrip clean.
-Generated 1448H dates match the real emails exactly.
+## Checks
 
-**Unresolved: the kabisa set.** `KABISA_REMAINDERS` is currently
-`{2,5,8,10,13,16,19,21,24,27,29}`. The anchor data only covers 1447H (common)
-and 1448H, which cannot distinguish between the competing 30-year cycle
-variants. Years beyond 1448H are unverified.
+- All four test files pass on 5 Oct 2026 with `python_main_env`:
+  `core/misri.py`, `core/test_sweep.py` (116 checks), `core/test_dates.py`,
+  `core/test_personal.py`.
+- `core/generate.py jamaats/nj-burhani --years 1` produces 86 events (102 before
+  the Ashara entries came out).
+- Each new or moved miqaat was checked against mumineen.org's 1448H list and
+  against the ABNJ email that announced it in 1447H; all land on the announced
+  evening. The two Khatmul Quran programmes are not on mumineen.org and rest on
+  the emails alone.
+- **Not run:** lint. `ruff` is not installed in `python_main_env`.
+- **Confirmed by Shahzad, not by Claude:** the import result in Google Calendar.
 
-Superseded 24 Sep 2026: the mumineen.org check below extends this to 1450H.
-`misri.py` and the README now say so, and `VERIFIED_THROUGH = 1450` in
-`misri.py` is the single place that horizon lives.
+## Open issues
 
-The printed 1448H taqweem does not settle this. 1448H is already an anchor, and
-every competing variant agrees on it. Settling the cycle needs a trusted
-Gregorian date for 1 Moharram 1449H or later.
+- **Not pushed.** This session's commit is local only. The cron removal in
+  `sweep.yml` reaches GitHub on push; the workflow is already disabled there.
+- **Eid ul Adha placeholder not yet in the live calendar.** Import
+  `jamaats/nj-burhani/nj-burhani-eid-ul-adha.ics` (one event, gitignored).
+- **Yaumul Arafa and Ghadir-e-Khum have no start time**, so they default to
+  19:00 until the sweep corrects them. Left as is.
+- **`khatmul-quran-shehrullah` may have been a one-off** in 1447H. Revisit when:
+  the Shehrullah 1448H monthly schedule arrives (about Feb 2027).
+- **GitHub Support purge not sent.** The jamaat's list address was scrubbed
+  from history on 23 Sep 2026 with `git filter-repo` and force-pushed, but
+  GitHub may serve pre-rewrite commits by exact hash until it garbage-collects
+  them. Any clone made before that still carries it; delete rather than pull.
+- **Kabisa past 1450H is unproven.** The sweep halts if a whole Hijri month
+  comes out shifted. Revisit when: the Moharram 1449H roundup arrives (about
+  May 2027), which is itself the check.
+- Bohra dates and personal dates items and the Codex review findings below.
 
-`core/test_sweep.py` covers the sweep's pure logic in 94 assertions: idempotency
-stamps, the Hijri/Gregorian cross-check, all five ambiguity gates, ayyam fan-out,
-correction ordering, the UID rules generate.py and sweep.py must agree on, and
-Gmail backoff. Several anchor on `VERIFIED_ANCHORS` pairs. It runs in CI beside
-the misri anchors.
+## Next action
 
-**The extraction has now run against real mail.** 174 announcements spanning 400
-days, no errors, 106 occurrences. It correctly returned nothing for 92 of them.
-Reading that output found five miqaats the calendar was missing and a handful of
-social announcements the prompt should have excluded, both since fixed.
-
-**Still unproven: the kabisa set past 1450H.** The mumineen.org feed agrees with
-misri.py on all 642 of its Hijri/Gregorian pairs across 1448H-1450H, and its
-1 Moharram dates give 1448H 355 days and 1449H 354, which matches. That settles
-remainders 8 and 9 and supports the Fatimid variant over the common tabular one,
-which marks 7 rather than 8. The other eight positions in the cycle are untested,
-so generation is safe to 1450H and speculative after it.
-
-Two family records checked on 24 Sep 2026 add weight backwards: a death in
-1440H and one in 1445H, each recorded with both its Hijri and Gregorian date,
-convert exactly. That confirms the leap-year count across 1440H-1447H, not which
-years carry the day, so it does not lift `VERIFIED_THROUGH`.
-
-**Ashara and Eid timings come from the jamaat, not from mail.** A year of
-announcements contains no Ashara timing mail at all -- the Ashara week itself is
-nearly silent -- and the only Eid mail is the afternoon zohr/asr one. Those
-entries carry hand-set defaults that no sweep will ever correct.
-
-## Next steps
-
-1. **Confirm the published OAuth app really stopped expiring.** Published on
-   23 Sep 2026 and re-approved the same day. Google greyed out Publish until the
-   Branding page had a home page, privacy policy and authorized domain; the
-   `miqaat` Pages site covered all three (`privacy.html` added there,
-   `shahzadabbas-personal.github.io` as the domain). No terms of service, no
-   Search Console, no verification submitted. The app runs unverified, 1 of 100
-   users. If the daily sweep still succeeds after 30 Sep 2026, the 7-day expiry
-   is gone; if it lapses, check whether Google treats restricted `gmail.readonly`
-   differently for unverified production apps.
-
-   The jamaat's list address was scrubbed from all history on 23 Sep 2026 with
-   `git filter-repo --replace-text` and force-pushed. Any other clone made
-   before that still carries it; delete such clones rather than pull into them.
-   GitHub may still serve the pre-rewrite commits to anyone holding their exact
-   hash until it garbage-collects them. A GitHub Support request purges them
-   outright; not yet sent.
-
-2. **Ashara and Eid timings will never self-correct.** ABNJ announces neither, so
-   those entries carry hand-set defaults. The Ashara raat majlis sits at 19:30,
-   which approximates an hour before maghrib only while Ashara falls in June, and
-   Ashara moves about eleven days earlier every year. Eid starts at 05:00 to clear
-   fajr, which holds while Eid falls in February or March. Both need revisiting as
-   they drift.
-
-3. **The GitHub Actions workflow does nothing useful.** Its verify steps run and
-   pass; the sweep step is a stubbed echo, and it could not authenticate
-   unattended in any case. Either wire it to something real or drop the cron
-   trigger and leave it on `workflow_dispatch`.
-
-4. **Generation stops at one year by choice, not by doubt.** The kabisa set holds
-   through 1450H against 642 independent date pairs, so `--years 3` is available
-   whenever a longer horizon justifies the re-import.
+Import `jamaats/nj-burhani/nj-burhani-eid-ul-adha.ics` into the Miqaat calendar,
+then push when Shahzad is ready.
 
 ## Daily Bohra dates and personal dates (both live 24 Sep 2026)
 
@@ -156,201 +152,108 @@ calendar is not the Misri one, so it cannot do either.
 
 **Decided.**
 
-- **Two shared calendars from one codebase, no fork or branch.** The existing
-  Miqaat calendar stays as it is. A new Bohra Dates calendar carries one
-  all-day event per day. Shahzad first leaned towards putting the dates in the
-  shared calendar and forking a miqaat-only variant. Codex reviewed the question
-  independently and made the same recommendation.
+- **Two shared calendars from one codebase, no fork or branch.** The Miqaat
+  calendar stays as it is. A Bohra Dates calendar carries one all-day event per
+  day. Codex reviewed the question independently and agreed.
 - **The share page offers the dates as a separate optional section**, with its
-  own iPhone and Google buttons below the miqaat ones. This replaced an earlier
-  plan for a combined "Miqaats + Bohra dates" button. Nobody has tested whether
-  one Google link can add two calendars, and it cannot be tested from the
-  owner's account. iPhone needs two `webcal://` subscriptions either way.
-- **Why the dates cannot live in the Miqaat calendar:** `sweep.py --prune
-  --apply` deletes every unstamped event in its range that `generate.py` did not
-  produce, so it would delete the daily dates. A miqaat-only copy would also
-  need the sweep to keep two calendars' timings in sync, and anyone who added
-  both would see each miqaat twice. (It would not spam notifications: the sweep
-  patches with `sendUpdates="none"`.)
-- **Label** reads `13mi Rabi ul Akhar 1448H`. It is the daylight date; from
-  maghrib it is the next Hijri day. The share page and the calendar description
-  leave that out, because Bohras already know it. Each event's own description
-  still says it; removing it would mean a full re-import, which a one-line fix
-  does not justify. Drop it from `dates.py` whenever the calendar is next
-  re-imported for another reason.
+  own iPhone and Google buttons. Nobody has tested whether one Google link can
+  add two calendars; iPhone needs two `webcal://` subscriptions either way.
+- **The dates cannot live in the Miqaat calendar:** `sweep.py --prune --apply`
+  deletes every unstamped event in its range that `generate.py` did not produce.
+- **Label** reads `13mi Rabi ul Akhar 1448H`, the daylight date. Each event's
+  description still notes the maghrib change; drop it from `dates.py` whenever
+  the calendar is next re-imported for another reason.
 - **Horizon is 1450H**, the last verified year. `dates.py` refuses to go further.
-- **Personal events** are for any member who forks the repo: a gitignored
-  per-person input file plus a committed blank template, generating a private
-  ICS each person imports into their own Google account. Nothing personal is
-  committed, because the repo is public.
-- **Personal dates are entered in Hijri only**, as day and month with no year
-  ("23 Safar"). Placing one in 1448H-1450H uses only the verified range.
-  Converting a Gregorian birth date like 1985 would run through the unverified
-  part of the kabisa cycle, so `born:` and its "after maghrib" flag were dropped
-  on 24 Sep 2026. A 30mi Zilhaj date in a common year falls back to **29mi**.
-- **Personal UIDs come from the entry's name and year**, not its date, so a
-  corrected date moves the event on re-import. Renaming or deleting an entry
-  leaves the old event, which the README tells people to delete by hand.
-  Duplicate names are refused.
+- **Personal events** are a gitignored per-person input file plus a committed
+  blank template, generating a private ICS each person imports. Entered in Hijri
+  only ("23 Safar"); a 30mi Zilhaj date in a common year falls back to 29mi.
+  UIDs come from the entry's name and year, so a corrected date moves the event
+  on re-import; renaming leaves the old event behind.
 - **Re-import moves an event by UID alone.** Tested 24 Sep 2026 in a throwaway
-  calendar: two events imported on 6 Aug 2026, then re-imported on 7 Aug, one
-  with `SEQUENCE` and one without. Both moved, no duplicates, nothing left
-  behind. This also backs the README's "updates in place" claim for
-  `generate.py` and `dates.py`, which set no `SEQUENCE`. `personal.py` sets one
-  anyway (minutes since the epoch) for an event someone edited by hand.
-- **Codex reviewed `personal.py` on 24 Sep 2026.** Fixed: `SEQUENCE`, a start
-  year past `--through`, and the template's live example. Left: a UID clash
-  only if a fork names its jamaat `personal`, a raw carriage return inside a
-  YAML name, and names over about 65 characters hitting the shared `fold()` bug
-  already in the findings table.
+  calendar, with and without `SEQUENCE`: both moved, no duplicates.
+- **Codex reviewed `personal.py` on 24 Sep 2026.** Left: a UID clash only if a
+  fork names its jamaat `personal`, a raw carriage return inside a YAML name,
+  and names over about 65 characters hitting the shared `fold()` bug.
 
 **Done.**
 
-- **Live calendar:** "Anjuman-e-Burhani Bohra Dates", created and made public
-  on 24 Sep 2026 with See event details. Google reported 1064 of 1064 events
-  imported. ID:
+- **Live calendar** "Anjuman-e-Burhani Bohra Dates", public since 24 Sep 2026,
+  1064 events, ID
   `903e3d984a794f7789744ff56a86b900bec9f82b2a343f771cc0d2e3b6adcf4f@group.calendar.google.com`.
-  Spot check: 24 Sep 2026 shows 13mi Rabi ul Akhar 1448H, matching
-  mumineen.org. Google's built-in Islamic date shows the 12th that day.
-- **Share page** carries the optional Bohra dates section (`miqaat` repo,
-  commit 599d17d). The new buttons have not been tapped on a real iPhone or
-  Android phone yet.
-- `core/dates.py` builds the Bohra Dates ICS: 1064 days, 1448H-1450H, 293 KB
-  (Google's import limit is 1 MB per file, not a count of events).
-- `core/test_dates.py` covers no gaps or repeats across month and year
-  boundaries, all 19 `VERIFIED_ANCHORS`, and unique UIDs. It runs in CI.
-- `generate.py`: file writing and the CRLF check moved into `write_ics()` so
-  `dates.py` shares them. The miqaat ICS is byte-identical before and after,
-  apart from DTSTAMP.
-- `misri.py` and the README warn from 1450H, not 1448H. The README has a
-  "Daily Bohra dates" section.
-- All tests pass. No linter is configured; a one-off `uvx ruff check` flagged
-  only `datetime.now()` in `dates.py`, which copies `generate.py` on purpose,
-  and findings that already sat in `generate.py` beforehand.
-- **Personal dates:** `core/personal.py`, `core/test_personal.py` (in CI), a
-  blank `personal/events.template.yaml`, a gitignore rule, and a README section.
-  Committed as b320619.
-- **Shahzad's own family calendar is live**, "Our Family Bohra Dates", private,
-  13 entries across 1448H-1450H (Google reported 39 of 39 imported). He shares
-  it view-only with his family. Its source is his local
-  `personal/events.yaml`, which git ignores; that file is the master list, so
-  edits go there and get re-imported, never made in Google. One entry in it is
-  marked "to confirm". Nothing about it belongs in this repo.
+- **Share page** carries the Bohra dates section (`miqaat` repo, commit 599d17d).
+- `core/dates.py`, `core/test_dates.py`, `core/personal.py`,
+  `core/test_personal.py`, `personal/events.template.yaml`.
+- **Shahzad's family calendar** "Our Family Bohra Dates" is live and private.
+  Its master list is his local, gitignored `personal/events.yaml`; edit there and
+  re-import, never in Google. One entry is marked "to confirm".
 
-**Driving Google Calendar's import page from a browser agent.** Three traps,
-all hit on 24 Sep 2026. The "Add to calendar" list can stay open invisibly
-after a choice, so a click on Import lands on a calendar row instead: once it
-silently switched the target to the public Miqaat calendar before anything was
-imported. Set the target, confirm it in the page, and click Import through the
-page's own script with a guard on the selected calendar name. The first Import
-click sometimes does nothing, and an import can take 30 seconds. Re-importing
-the same file is harmless because UIDs are stable.
+**Driving Google Calendar's import page from a browser agent.** The "Add to
+calendar" list can stay open invisibly, so a click on Import lands on a calendar
+row and switches the target (once to the public Miqaat calendar). Set the
+target, confirm it in the page, and click Import through the page's own script
+with a guard on the selected calendar name. The first Import click sometimes
+does nothing, and an import can take 30 seconds.
 
 **Left to do.**
 
 1. **Test the share page's new buttons** once on an iPhone and once on Android.
-2. **Personal dates, phase 2:** a web page on the share site where a member
-   types dates into a form and downloads the ICS, with no install and nothing
-   sent anywhere. It would reuse `personal.py`'s rules. Deferred on 24 Sep 2026.
+2. **Personal dates, phase 2:** a form on the share site that downloads the ICS
+   with nothing sent anywhere. Deferred 24 Sep 2026.
 3. **Before 1451H:** extend `VERIFIED_THROUGH` only against a trusted source,
    then regenerate and re-import the dates calendar.
 
 ## Open findings from the Codex review
 
-Codex reviewed the whole repo on 23 Sep 2026. Three findings are fixed (all-day
-banners, timeless announcements, same-day corrections), plus the two from its
-review of the OAuth fix. These remain, most severe first. Only the first three
-were checked against the code; the rest are Codex's word until someone reads
-the line.
+Codex reviewed the whole repo on 23 Sep 2026. These remain, most severe first.
+Only those marked Confirmed were checked against the code.
 
 | Finding | Where | Status |
 |---|---|---|
-| `seasonal` in config (13 Ashara ohbat Fridays) is never generated | `generate.py` `expand()` | Confirmed. Needs a re-import once fixed |
+| `seasonal` in config (13 Ashara ohbat Fridays) is never generated | `generate.py` `expand()` | Confirmed. Left as is by decision, 5 Oct 2026 |
 | Full mail bodies go to Claude before anything filters them | `sweep.py` `extract()` | Confirmed, by design. `privacy.html` discloses it |
 | `--prune --apply` can delete a hand-added event in the generated range | `sweep.py` `prune()` | Confirmed. Manual flag only; the schedule never passes it |
-| Sweep writes a miqaat the jamaat does not list in `observes` | `sweep.py` `resolve()` | Unchecked |
+| Sweep writes a miqaat the jamaat does not list in `observes` | `sweep.py` `resolve()` | Unchecked. Now matters for Ashara waaz/majlis, which left `observes` |
 | A later correction does not clear an earlier two-mail time conflict | `sweep.py` `merge_day()` | Unchecked |
 | Plan groups by Gregorian year but UIDs use Hijri year; a miqaat twice in one Gregorian year may duplicate | `sweep.py` `plan()` | Unchecked |
 | Announced venue is extracted but never written to `location` | `sweep.py` `apply()` | Unchecked |
-| Timed multi-day miqaats (3-day Mohammed Burhanuddin urus) generate day one only | `generate.py` | Unchecked |
+| Timed multi-day miqaats (3-day Mohammed Burhanuddin urus) generate day one only | `generate.py` | Unchecked. The Aug 2026 sweep inserted days 2 and 3 itself (`logs/sweep-2026-08.log`) |
 | `24:00` passes the time regex, then crashes mid-run after earlier writes | `sweep.py` `resolve()` | Unchecked |
 | ICS line folding can emit a 76-byte line | `generate.py` `fold()` | Unchecked, cosmetic |
 
-## Miqaats the inventory found and nobody added
-
-Extracting 400 days of announcements turned up programmes ABNJ holds that
-`catalog.yaml` has no entry for. Five went in: Ayyam ul Beez, Lailatus Salaseen,
-Aakhri Jumoa, and two that were already in the catalog but missing from ABNJ's
-observes list, Lailatul Meraj and Shab-e-Barat.
-
-These did not. They sit here so nobody has to run the inventory again to find
-them, which costs a few dollars and 174 extraction calls.
-
-| What the mail called it | Announced | Hijri as stated |
-|---|---|---|
-| Salgirah mubarak ni raat of Imamuz Zaman (SA) | 25 Sep 2025 | 3mi Rabi ul Akhar |
-| Milad raat mubarak of Syedna Mohammed Burhanuddin | 11-12 Oct 2025 | 19-20mi Rabi ul Akhar |
-| Pehli raat of Rajab ul Asab | 19 Dec 2025 | not stated |
-| Milad ni raat of Amirul Mumineen (AS) | 31 Dec 2025 | 12mi Rajab |
-| Ayyamul Barakatil Khuldiyah, Khatmul Quran majlis | 4-5 Jan 2026 | 16-17mi Rajab |
-| Lailat Urs Mubarak Syedna Taher Saifuddin, waaz | 6 Jan 2026 | 18mi Rajab |
-| Urs Syedna Abdul Qadir Najmuddin (Ujjain) | 14 Jan 2026 | 26mi Rajab |
-| Khatmul Quran ni majlis, Shehrullah | 20-22 Feb 2026 | 4th-6th Shehrullah |
-| Urus raat majlis, Syedna Abdul Husain Husamuddin | 12 Jun 2026 | 27mi Zilhaj |
-
-Read those Hijri dates carefully before trusting them. They are what the mail
-said, and a raat majlis announced as 26mi is usually the eve of 27mi, so the
-canonical date is often one higher. Check each against the taqweem rather than
-converting from the Gregorian column.
-
-Two notes on the catalog while here. It already holds Syedna Taher Saifuddin's
-milad in Zilqad but not his urus in Rajab. And `urus-abdul-qadir-hakimuddin` at
-26mi Shawwal is a different person from Abdul Qadir Najmuddin of Ujjain above.
-
 ## How the sweep behaves
 
-The rules below started as the spec for `sweep.py` and now describe what it
-does. The reasoning is worth keeping — each one exists because the obvious
-implementation is wrong.
+Each rule exists because the obvious implementation is wrong.
 
-- **Extraction is Claude, not regex.** ABNJ's format is clean and regex would
-  work for them. It would not survive a fork, which is the point of the repo.
-- **One mail yields a list of occurrences.** That is what makes the monthly
-  roundup, per-miqaat confirmations and multi-day ayyam share one code path: a
-  roundup returns a dozen entries, an ayyam returns one per day.
-- **Corrections need no merge logic.** The sweep works through mail oldest to
-  newest and each write overwrites, so a "Time change:" or "Correction-" that
-  arrives later simply wins.
+- **One mail yields a list of occurrences.** The monthly roundup, per-miqaat
+  confirmations and multi-day ayyam share one code path.
+- **Corrections need no merge logic.** Mail is processed oldest to newest and
+  each write overwrites, so a later "Time change:" wins.
 - **Idempotency lives in the description.** `source: generated` becomes
-  `source: announcement <date>`, and a re-sweep skips anything already stamped at
-  or after that mail's date. Without it every run re-edits every event and mails
-  a notification to every subscriber.
+  `source: announcement <date>`, and a re-sweep skips anything already stamped
+  at or after that mail's date. Without it every run re-notifies subscribers.
 - **Ambiguity is never guessed.** No catalog match, low confidence, or a Hijri
   date that disagrees with the Gregorian one leaves the event untouched and
   prints it for review. A wrong time is worse than no time.
 - **An empty Gmail result is not a quiet week.** Zero announcements triggers a
-  second query with no sender filter. If the mailbox is dead too, the sweep
-  errors instead of reporting nothing to do. Transient 429s and 5xx retry with
-  backoff; 401, 403 and 404 fail immediately.
-- **A whole month off by one halts the run.** One miqaat a day out is an
-  `observed_offset` question. An entire Hijri month shifted the same way is a
-  `KABISA_REMAINDERS` error, and the sweep stops rather than writing dates on top
-  of a broken converter.
-- **Only extracted fields leave the process.** The sweep holds bodies in memory,
-  clears them after each call, and never writes one to a file or an event. A
-  bounded evidence snippet is the only quoted text that reaches the calendar.
+  second query with no sender filter; a dead mailbox errors. 429s and 5xx retry
+  with backoff; 401, 403 and 404 fail immediately.
+- **A whole month off by one halts the run**, as a `KABISA_REMAINDERS` error
+  rather than an `observed_offset` question.
+- **Only extracted fields leave the process.** Bodies are held in memory and
+  cleared after each call; a bounded evidence snippet is the only quoted text
+  that reaches the calendar.
 
 ## Source details
 
 - Announcements come from `info@anjuman-e-burhani.org` to the jamaat list. The
-  list address stays out of this file on purpose: git tracks HANDOFF.md, and the
-  repo's own rule forbids committing mailing list addresses.
+  list address stays out of this file on purpose: the repo is public.
 - Monthly roundup subject pattern: `<Month> <Year>H Miqaat Monthly Schedule`,
-  explicitly marked tentative, with per-miqaat confirmations following
-- Body format gives both Hijri and Gregorian dates plus maghrib time, so the
-  sweep does not need to do its own conversion — it can cross-check instead
+  marked tentative, with per-miqaat confirmations following.
+- Mail states the daylight Hijri date of the evening a programme is held, plus
+  the Gregorian date and maghrib time, so the sweep cross-checks rather than
+  converts.
 - Noise to exclude: Teejia/Sadaqallah/sipara notices, FMB thaali, RSVP
-  reminders from `mawaid.nj@`, and its52.com mail (central Dawat, unrelated)
-- Austin jamaat's public calendars, for reference on the two-layer pattern:
+  reminders from `mawaid.nj@`, and its52.com mail.
+- Austin jamaat's public calendars, for the two-layer pattern:
   `uqlnakio0ildkct3nh1eqjo0u4@group.calendar.google.com` and
   `fh0h90ic2lhhsst6088f2rlhc8@group.calendar.google.com`

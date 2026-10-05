@@ -1,9 +1,8 @@
-# Weekly announcement sweep. The verify steps run; the sweep itself is still
-# a stub, pending a calendar_id and an ANTHROPIC_API_KEY secret.
+# Manual only. The real sweep runs on the local scheduled task, because it
+# cannot sign in to Gmail unattended here. The sweep step below is a stub;
+# the verify steps still run when triggered by hand.
 name: miqaat-sweep
 on:
-  schedule:
-    - cron: '0 12 * * 0'   # Sundays 12:00 UTC
   workflow_dispatch:
 
 jobs:

@@ -84,16 +84,41 @@ miqaats:
   - id: urus-mohammed-burhanuddin
     name: Urus Mubarak - Syedna Mohammed Burhanuddin (RA), 52nd Dai al-Mutlaq
     month: 3
-    day: 13
+    day: 14
     duration_days: 3
     category: urus
+    note: >-
+      The urus is 16mi per mumineen.org. ABNJ holds three raat majlis ending on
+      the raat of 16mi (25-27 Aug 2026), so 14mi-16mi with observed_offset -1.
+
+  # --- Rabi ul Akhar (4) ---
+  - id: salgirah-imamuz-zaman
+    name: Salgirah Mubarak - Imamuz Zaman (SA)
+    month: 4
+    day: 4
+    category: milad
+    note: >-
+      ABNJ announced the raat on 3mi (25 Sep 2025), so canonical 4mi with
+      observed_offset -1.
+
+  - id: milad-mohammed-burhanuddin
+    name: Milad Mubarak - Syedna Mohammed Burhanuddin (RA), 52nd Dai al-Mutlaq
+    month: 4
+    day: 20
+    category: milad
+    note: >-
+      Announced with Aapna Mansoos Syedna Mufaddal Saifuddin (TUS). Raat majlis
+      on 19mi (30 Sep 2026), day programme on 20mi in 1447H.
 
   # --- Jamadil Ula (5) ---
   - id: shahadat-fatema
     name: Shahadat raat - Maulatena Fatema tuz Zehra (SA)
     month: 5
-    day: 9
+    day: 10
     category: majlis
+    note: >-
+      10mi per mumineen.org. ABNJ held the shahadat raat majlis on the evening
+      of 9mi (30 Oct 2025), so observed_offset -1.
 
   # --- Jamadil Ukhra (6) ---
   - id: urus-ismail-badruddin
@@ -109,11 +134,51 @@ miqaats:
     category: urus
 
   # --- Rajab ul Asab (7) ---
+  - id: pehli-raat-rajab
+    name: Pehli raat - Rajab ul Asab
+    month: 7
+    day: 1
+    category: majlis
+    note: Held the evening before 1mi Rajab, so observed_offset -1.
+
   - id: urus-noormohammed-nooruddin
     name: Urus - Syedna NoorMohammed Nooruddin (AQ), Mandvi
     month: 7
     day: 3
     category: urus
+
+  - id: milad-amirul-mumineen
+    name: Milad Mubarak - Amirul Mumineen (AS)
+    month: 7
+    day: 13
+    category: milad
+    note: ABNJ announced the milad raat on 12mi, so observed_offset -1.
+
+  - id: ayyam-barakat-khuldiyah
+    name: Ayyamul Barakatil Khuldiyah - Khatmul Quran ni Majlis
+    month: 7
+    day_range: [17, 18]
+    category: majlis
+    note: >-
+      The two nights before the urus of Syedna Taher Saifuddin (RA). ABNJ
+      announced them for the evenings of 16mi and 17mi, so observed_offset -1.
+
+  - id: urus-taher-saifuddin
+    name: Urus Mubarak - Syedna Taher Saifuddin (RA), 51st Dai al-Mutlaq
+    month: 7
+    day: 19
+    category: urus
+    note: Lailat ul urus waaz held on the evening of 18mi, so observed_offset -1.
+
+  - id: urus-abdul-qadir-najmuddin
+    name: Urus - Syedna Abdul Qadir Najmuddin (AQ), 47th Dai al-Mutlaq, Ujjain
+    month: 7
+    day: 26
+    category: urus
+    note: >-
+      26mi per mumineen.org (47th Dai). ABNJ held it on the evening of 26mi,
+      the same evening as the Lailatul Meraj raat. Not the same person as Syedi
+      Abdul Qadir Hakimuddin in Shawwal.
 
   - id: lailatul-meraj
     name: Lailatul Meraj
@@ -168,6 +233,13 @@ miqaats:
     day: 11
     category: majlis
 
+  - id: khatmul-quran-shehrullah
+    name: Khatmul Quran ni Majlis - Shehrullah
+    month: 9
+    day_range: [4, 6]
+    category: majlis
+    note: ABNJ held this on 4th-6th Shehrullah in 1447H. May not recur every year.
+
   - id: misaaq-majlis
     name: Misaaq ni Majlis
     month: 9
@@ -177,8 +249,9 @@ miqaats:
   - id: shahadat-ameerul-mumineen
     name: Shahadat - Ameerul Mumineen (AS)
     month: 9
-    day: 21
+    day: 19
     category: majlis
+    note: 19mi per mumineen.org.
 
   - id: aakhri-jumoa
     name: Aakhri Jumoa
@@ -260,6 +333,15 @@ miqaats:
     month: 12
     day: 18
     category: eid
+
+  - id: urus-abdul-husain-husamuddin
+    name: Urus - Syedna Abdul Husain Husamuddin (AQ), 48th Dai al-Mutlaq
+    month: 12
+    day: 27
+    category: urus
+    note: >-
+      27mi per mumineen.org (48th Dai). ABNJ held the urus raat majlis on the
+      evening of 27mi (12 Jun 2026).
 
   # --- Every Hijri month ---
   - id: darees-majlis
